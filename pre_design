@@ -2,7 +2,7 @@ flow_matching
 
 --main.py
 --model
-----VelocityField(ModelWrapper), Subclasses UnconditionalVelocityField, ConditionalVelocityField
+----VelocityField(nn.Module/ ModuleWrapper) (same version usable for cond/ uncond)
 ----Flow (see lib) (with trajectory -> calculate by interpolating between few X_ts -> get a trajectory, maybe for visualization purposes)
 ----AffineFlow(Flow) (see lib)
 ----AffineScheduler (see lib)
@@ -11,7 +11,8 @@ flow_matching
 --view
 -- idk, different kinds of visualizers probably
 --controller
-----Trainer class
+----ConditionalTrainer
 ----LR finder
 --utils
+----loader_from_coupling
 
