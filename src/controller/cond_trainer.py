@@ -7,15 +7,21 @@ from src.controller.smart_logger import SmartLogger
 from src.model.losses import ConditionalFMLoss
 
 class CondTrainer:
-    def __init__(self, model, path: ProbPath, optimizer, verbose=True, monitoring_int=10):
+    def __init__(self, model, path: ProbPath, optimizer, num_epochs, verbose=True, monitoring_int=10):
         self.model = model
         self.path = path
         self.optimizer = optimizer
+        self.num_epochs = num_epochs
         self.criterion = ConditionalFMLoss()
         self.logger = SmartLogger(verbose=verbose)
         self.monitoring_int = monitoring_int
 
-    def train(self, loader: DataLoader):
+    def training_loop(self, loader: DataLoader):
+        for _ in range(self.num_epochs):
+            self._train(loader)
+            self._validate(loader)
+
+    def _train(self, loader: DataLoader):
         batch_size = loader.batch_size
         self.model.train()
         for batch_id, (x_0, x_1) in enumerate(loader):
@@ -35,7 +41,7 @@ class CondTrainer:
         epoch_train_loss = self.compute_epoch_loss(samples)
         self.logger.log_epoch_train_loss(epoch_train_loss)
 
-    def validate(self, loader: DataLoader):
+    def _validate(self, loader: DataLoader):
         batch_size = loader.batch_size
         for batch_id, (x_0, x_1) in enumerate(loader):
             if batch_id % self.monitoring_int == 0: # only validate on limited samples
