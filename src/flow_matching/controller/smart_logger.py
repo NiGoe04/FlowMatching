@@ -1,7 +1,7 @@
 from typing import List
 from flow_matching.path import PathSample
 
-from src.view.logger import Logger
+from src.flow_matching.view.logger import Logger
 
 class SmartLogger:
     def __init__(self, verbose):

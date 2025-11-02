@@ -3,8 +3,8 @@ from flow_matching.path import ProbPath
 from torch.utils.data import DataLoader
 from flow_matching.path.path_sample import PathSample
 
-from src.controller.smart_logger import SmartLogger
-from src.model.losses import ConditionalFMLoss
+from src.flow_matching.controller.smart_logger import SmartLogger
+from src.flow_matching.model.losses import ConditionalFMLoss
 
 class CondTrainer:
     def __init__(self, model, path: ProbPath, optimizer, num_epochs, verbose=True, monitoring_int=10):
