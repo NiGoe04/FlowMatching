@@ -7,7 +7,7 @@ from src.flow_matching.controller.smart_logger import SmartLogger
 from src.flow_matching.model.losses import ConditionalFMLoss
 
 class CondTrainer:
-    def __init__(self, model, path: ProbPath, optimizer, num_epochs, verbose=True, monitoring_int=10):
+    def __init__(self, model, optimizer, path: ProbPath, num_epochs, verbose=True, monitoring_int=10):
         self.model = model
         self.path = path
         self.optimizer = optimizer
@@ -17,9 +17,12 @@ class CondTrainer:
         self.monitoring_int = monitoring_int
 
     def training_loop(self, loader: DataLoader):
-        for _ in range(self.num_epochs):
+        self.logger.log_training_start()
+        for epoch in range(self.num_epochs):
+            self.logger.log_epoch(epoch)
             self._train(loader)
             self._validate(loader)
+        self.logger.log_training_end()
 
     def _train(self, loader: DataLoader):
         batch_size = loader.batch_size
@@ -38,7 +41,7 @@ class CondTrainer:
             self.optimizer.step()
         # calculate epoch train loss
         samples = self.logger.request_training_samples()
-        epoch_train_loss = self.compute_epoch_loss(samples)
+        epoch_train_loss = self._compute_epoch_loss(samples)
         self.logger.log_epoch_train_loss(epoch_train_loss)
 
     def _validate(self, loader: DataLoader):
@@ -50,10 +53,10 @@ class CondTrainer:
                 self.logger.add_validation_sample(sample)
         # calculate epoch validation loss
         samples = self.logger.request_validation_samples()
-        epoch_val_loss = self.compute_epoch_loss(samples)
+        epoch_val_loss = self._compute_epoch_loss(samples)
         self.logger.log_epoch_val_loss(epoch_val_loss)
 
-    def compute_epoch_loss(self, samples):
+    def _compute_epoch_loss(self, samples):
         self.model.eval()
         total_loss = 0
         for sample in samples:
