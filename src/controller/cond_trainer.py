@@ -1,0 +1,56 @@
+import torch
+from flow_matching.path import ProbPath
+from torch.utils.data import DataLoader
+from flow_matching.path.path_sample import PathSample
+
+from src.controller.smart_logger import SmartLogger
+from src.model.losses import ConditionalFMLoss
+
+class CondTrainer:
+    def __init__(self, model, path: ProbPath, optimizer, verbose=True, monitoring_int=10):
+        self.model = model
+        self.path = path
+        self.optimizer = optimizer
+        self.criterion = ConditionalFMLoss()
+        self.logger = SmartLogger(verbose=verbose)
+        self.monitoring_int = monitoring_int
+
+    def train(self, loader: DataLoader):
+        batch_size = loader.batch_size
+        self.model.train()
+        for batch_id, (x_0, x_1) in enumerate(loader):
+            t = torch.rand(batch_size)  # Randomize time t ∼ U[0, 1]
+            sample: PathSample = self.path.sample(t=t, x_0=x_0, x_1=x_1)
+            if batch_id % self.monitoring_int == 0:
+                self.logger.add_training_sample(sample)
+            x_t = sample.x_t
+            dx_t = sample.dx_t  # dX_t is ψ˙ t(X0 | X1).
+            # If D is the Euclidean distance, the CFM objective corresponds to the mean-squared error
+            loss = self.criterion(self.model(x_t, t), dx_t) # Monte Carlo estimate
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+        # calculate epoch train loss
+        samples = self.logger.request_training_samples()
+        epoch_train_loss = self.compute_epoch_loss(samples)
+        self.logger.log_epoch_train_loss(epoch_train_loss)
+
+    def validate(self, loader: DataLoader):
+        batch_size = loader.batch_size
+        for batch_id, (x_0, x_1) in enumerate(loader):
+            if batch_id % self.monitoring_int == 0: # only validate on limited samples
+                t = torch.rand(batch_size)  # Randomize time t ∼ U[0, 1]
+                sample: PathSample = self.path.sample(t=t, x_0=x_0, x_1=x_1)
+                self.logger.add_validation_sample(sample)
+        # calculate epoch validation loss
+        samples = self.logger.request_validation_samples()
+        epoch_val_loss = self.compute_epoch_loss(samples)
+        self.logger.log_epoch_val_loss(epoch_val_loss)
+
+    def compute_epoch_loss(self, samples):
+        self.model.eval()
+        total_loss = 0
+        for sample in samples:
+            loss = self.criterion(self.model(sample.x_t, sample.t), sample.dx_t)
+            total_loss += loss.item()
+        return total_loss / len(samples)
