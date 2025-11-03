@@ -25,9 +25,9 @@ class CondTrainer:
         self.logger.log_training_end()
 
     def _train(self, loader: DataLoader):
-        batch_size = loader.batch_size
         self.model.train()
         for batch_id, (x_0, x_1) in enumerate(loader):
+            batch_size = x_1.shape[0]
             t = torch.rand(batch_size)  # Randomize time t ∼ U[0, 1]
             # noinspection PyTypeChecker
             sample: PathSample = self.path.sample(t=t, x_0=x_0, x_1=x_1)
@@ -46,8 +46,8 @@ class CondTrainer:
         self.logger.log_epoch_train_loss(epoch_train_loss)
 
     def _validate(self, loader: DataLoader):
-        batch_size = loader.batch_size
         for batch_id, (x_0, x_1) in enumerate(loader):
+            batch_size = x_1.shape[0]
             if batch_id % self.monitoring_int == 0: # only validate on limited samples
                 t = torch.rand(batch_size)  # Randomize time t ∼ U[0, 1]
                 # noinspection PyTypeChecker

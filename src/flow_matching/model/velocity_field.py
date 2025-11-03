@@ -2,7 +2,7 @@ from flow_matching.utils import ModelWrapper
 import torch
 from torch import nn
 class SimpleVelocityField(nn.Module):
-    def __init__(self, dim: int = 2, h: int = 64):
+    def __init__(self, dim, h):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(dim + 1, h),  # +1 for time t
@@ -18,6 +18,6 @@ class SimpleVelocityField(nn.Module):
         return self.net(xt_input)
 
 class SimpleVelocityModel(ModelWrapper):
-    def __init__(self):
-        model = SimpleVelocityField()
+    def __init__(self, dim: int = 2, h: int = 64):
+        model = SimpleVelocityField(dim, h)
         super().__init__(model)
