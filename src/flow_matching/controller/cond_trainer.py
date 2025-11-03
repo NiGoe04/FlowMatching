@@ -7,7 +7,7 @@ from src.flow_matching.controller.smart_logger import SmartLogger
 from src.flow_matching.model.losses import ConditionalFMLoss
 
 class CondTrainer:
-    def __init__(self, model, optimizer, path: ProbPath, num_epochs, verbose=True, monitoring_int=10):
+    def __init__(self, model, optimizer, path: ProbPath, num_epochs, verbose=True, monitoring_int=50):
         self.model = model
         self.path = path
         self.optimizer = optimizer
@@ -29,6 +29,7 @@ class CondTrainer:
         self.model.train()
         for batch_id, (x_0, x_1) in enumerate(loader):
             t = torch.rand(batch_size)  # Randomize time t ∼ U[0, 1]
+            # noinspection PyTypeChecker
             sample: PathSample = self.path.sample(t=t, x_0=x_0, x_1=x_1)
             if batch_id % self.monitoring_int == 0:
                 self.logger.add_training_sample(sample)
@@ -49,6 +50,7 @@ class CondTrainer:
         for batch_id, (x_0, x_1) in enumerate(loader):
             if batch_id % self.monitoring_int == 0: # only validate on limited samples
                 t = torch.rand(batch_size)  # Randomize time t ∼ U[0, 1]
+                # noinspection PyTypeChecker
                 sample: PathSample = self.path.sample(t=t, x_0=x_0, x_1=x_1)
                 self.logger.add_validation_sample(sample)
         # calculate epoch validation loss

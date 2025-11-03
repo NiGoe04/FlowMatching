@@ -1,19 +1,20 @@
 from datetime import datetime
+from typing import *
 
 import torch
 import os
 import matplotlib.pyplot as plt
 
-from src.flow_matching.model.velocity_field import SimpleVelocityField
-
-
-def plot_tensor_2d(points: torch.Tensor, title: str = "2D Scatter Plot"):
+def plot_tensor_2d(points: torch.Tensor,
+                   title: str = "2D Scatter Plot",
+                   params: Optional[Dict[str, Any]] = None):
     """
-    Plots a 2D scatter plot from a tensor of shape [n, 2].
+    Plots a 2D scatter plot from a tensor of shape [n, 2], optionally annotating it with parameters.
 
     Args:
         points (torch.Tensor): Tensor of shape [n, 2].
         title (str): Title of the plot.
+        params (dict, optional): Dictionary of parameters to display on the plot.
     """
     if points.ndim != 2 or points.shape[1] != 2:
         raise ValueError(f"Expected tensor of shape [n, 2], got {points.shape}")
@@ -28,6 +29,14 @@ def plot_tensor_2d(points: torch.Tensor, title: str = "2D Scatter Plot"):
     plt.ylabel("x₂")
     plt.axis("equal")
     plt.grid(True, linestyle="--", alpha=0.5)
+
+    if params:
+        # Parameter-Text links oben einfügen
+        param_text = "\n".join([f"{k}: {v}" for k, v in params.items()])
+        plt.text(0.02, 0.98, param_text, transform=plt.gca().transAxes,
+                 verticalalignment='top', horizontalalignment='left',
+                 fontsize=9, bbox=dict(facecolor='white', alpha=0.6))
+
     plt.show()
 
 def store_model(save_dir_path, model):
