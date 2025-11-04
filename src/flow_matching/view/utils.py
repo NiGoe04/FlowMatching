@@ -1,7 +1,8 @@
-import matplotlib.pyplot as plt
 from typing import *
+
+import matplotlib.pyplot as plt
 import torch
-from mpl_toolkits import mplot3d
+
 
 def plot_tensor_2d(points: torch.Tensor,
                    title: str = "2D Scatter Plot",
@@ -69,3 +70,40 @@ def plot_tensor_3d(points: torch.Tensor, title: str = "3D Scatter Plot", params:
         ax.text2D(0.05, 0.95, param_text, transform=ax.transAxes, fontsize=10, verticalalignment='top')
 
     plt.show()
+
+def visualize_mnist_samples(tensor: torch.Tensor, n_samples: int = 16, title: str = "MNIST Samples", shuffle: bool = False):
+    """
+    Displays a grid of samples from a tensor of shape [N, 1, H, W].
+
+    Args:
+        tensor (torch.Tensor): Input tensor of shape [N, 1, H, W].
+        n_samples (int): How many images to display.
+        title (str): Title for the plot.
+        shuffle (bool): Whether to shuffle the samples before displaying.
+    """
+    # noinspection PyPep8Naming
+    N, C, H, W = tensor.shape
+    if C != 1:
+        raise ValueError(f"Expected single-channel tensor, got {C} channels")
+
+    n_samples = min(n_samples, N)
+    indices = torch.randperm(N) if shuffle else torch.arange(N)
+    indices = indices[:n_samples]
+
+    n_cols = int(n_samples ** 0.5)
+    n_rows = (n_samples + n_cols - 1) // n_cols
+
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols * 2, n_rows * 2))
+    axes = axes.flatten()
+
+    for i in range(n_samples):
+        axes[i].imshow(tensor[indices[i], 0].cpu().numpy(), cmap="gray")
+        axes[i].axis("off")
+
+    for i in range(n_samples, len(axes)):
+        axes[i].axis("off")
+
+    plt.suptitle(title)
+    plt.tight_layout()
+    plt.show()
+

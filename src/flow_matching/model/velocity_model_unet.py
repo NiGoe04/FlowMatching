@@ -23,7 +23,7 @@ class UnetVelocityField(nn.Module):
     def forward(self, x, t):
         # x: [batch, 1, H, W]
         # t: [batch, 1] -> broadcast to spatial dimensions
-        t_expanded = t.view(-1, 1, 1, 1).expand(-1, 1, x.shape[2], x.shape[3])
+        t_expanded = t.view(-1, 1, 1, 1).expand(x.shape[0], 1, x.shape[2], x.shape[3])
         x_in = torch.cat([x, t_expanded], dim=1)
 
         # Encoder
