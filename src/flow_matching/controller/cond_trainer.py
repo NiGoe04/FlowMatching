@@ -6,8 +6,10 @@ from flow_matching.path.path_sample import PathSample
 from src.flow_matching.controller.smart_logger import SmartLogger
 from src.flow_matching.model.losses import ConditionalFMLoss
 
+DEVICE_CPU = torch.device("cpu")
+
 class CondTrainer:
-    def __init__(self, model, optimizer, path: ProbPath, num_epochs, device, verbose=True, monitoring_int=50):
+    def __init__(self, model, optimizer, path: ProbPath, num_epochs, device=DEVICE_CPU, verbose=True, monitoring_int=50):
         self.model = model.to(device)
         self.path = path
         self.optimizer = optimizer
