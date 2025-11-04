@@ -14,8 +14,8 @@ from src.flow_matching.view.utils import visualize_mnist_samples
 
 # steering console
 NAME = "MNIST"
-TRAIN_MODEL = False
-SAVE_MODEL = False
+TRAIN_MODEL = True
+SAVE_MODEL = True
 SAMPLE_FROM_MODEL = True
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
