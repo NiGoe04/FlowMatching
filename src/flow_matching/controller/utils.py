@@ -3,6 +3,9 @@ from datetime import datetime
 import torch
 import os
 
+from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
+
+
 def store_model(save_dir_path, approach_name, model):
     """
     Saves the given model in the specified directory and returns the full model path.
@@ -22,45 +25,9 @@ def store_model(save_dir_path, approach_name, model):
 
     return full_path
 
-def load_model_2d(model_class, model_path, device="cpu"):
-    """
-    Loads a model's state_dict from file.
-
-    Args:
-        model_class: the class of the model to instantiate, e.g. SimpleVelocityField
-        model_path (str): path to the saved .pth file
-        device (str): device to map the model to ("cpu" or "cuda")
-
-    Returns:
-        torch.nn.Module: the loaded model
-    """
+def load_model_n_dim(dim, model_path, device="cpu"):
     # Create an instance of the model architecture
-    model = model_class()
-
-    # Load the saved weights
-    state_dict = torch.load(model_path, map_location=device)
-    model.load_state_dict(state_dict)
-
-    # Set model to evaluation mode by default
-    model.to(device)
-    model.eval()
-
-    return model
-
-def load_model_3d(model_class, model_path, device="cpu"):
-    """
-    Loads a model's state_dict from file.
-
-    Args:
-        model_class: the class of the model to instantiate, e.g. SimpleVelocityField
-        model_path (str): path to the saved .pth file
-        device (str): device to map the model to ("cpu" or "cuda")
-
-    Returns:
-        torch.nn.Module: the loaded model
-    """
-    # Create an instance of the model architecture
-    model = model_class(dim=3)
+    model = SimpleVelocityModel(dim=dim)
 
     # Load the saved weights
     state_dict = torch.load(model_path, map_location=device)

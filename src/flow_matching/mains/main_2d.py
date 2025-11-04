@@ -9,7 +9,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader
 
 from src.flow_matching.controller.cond_trainer import CondTrainer
-from src.flow_matching.controller.utils import store_model, load_model_2d
+from src.flow_matching.controller.utils import store_model, load_model_n_dim
 from src.flow_matching.model.coupling import Coupler
 from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
 from src.flow_matching.view.utils import plot_tensor_2d
@@ -58,7 +58,7 @@ if SAVE_MODEL:
     model_path = store_model(MODEL_SAVE_PATH, NAME, model)
 
 if SAMPLE_FROM_MODEL:
-    model = load_model_2d(SimpleVelocityModel, model_path)
+    model = load_model_n_dim(2, model_path)
     x_0_sample = torch.randn(PARAMS["amount_samples"], 2)
     solver = ODESolver(velocity_model=model)
     x_1_sample = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"], step_size=1.0 / PARAMS["solver_steps"])
