@@ -7,13 +7,16 @@ from flow_matching.solver import ODESolver
 from torch.utils.data import DataLoader
 
 from src.flow_matching.controller.cond_trainer import CondTrainer
+from src.flow_matching.controller.lr_finder import LRFinder
 from src.flow_matching.controller.utils import store_model, load_mnist_tensor, load_model_unet
 from src.flow_matching.model.coupling import Coupler
+from src.flow_matching.model.losses import ConditionalFMLoss
 from src.flow_matching.model.velocity_model_unet import UnetVelocityModel
 from src.flow_matching.view.utils import visualize_mnist_samples
 
 # steering console
 NAME = "MNIST"
+FIND_LR = False
 TRAIN_MODEL = True
 SAVE_MODEL = True
 SAMPLE_FROM_MODEL = True
@@ -23,10 +26,10 @@ MODEL_SAVE_PATH = "../../../models"
 
 # hyperparams
 PARAMS = {
-    "num_epochs": 10,
-    "batch_size": 16,
+    "num_epochs": 20,
+    "batch_size": 32,
     "dropout_rate_model": 0.06,
-    "learning_rate": 3e-5,
+    "learning_rate": 1e-3,
     "size_train_set": 70000,
     "amount_samples": 16,
     "solver_steps": 200,
@@ -51,9 +54,16 @@ optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
 trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], DEVICE)
 model_path = os.path.join(MODEL_SAVE_PATH, "model_MNIST_2025_70k-11-04_17-46-12.pth")
 
+# learning rate
+if FIND_LR:
+    lr_finder = LRFinder(model, optimizer, ConditionalFMLoss(), device=DEVICE)
+    lr_finder.range_test(loader, lr_start=1e-6, lr_end=1.0, num_iters=100)
+    lr_finder.plot()
+
 # training
 if TRAIN_MODEL:
     trainer.training_loop(loader)
+
 if SAVE_MODEL:
     # noinspection PyRedeclaration
     model_path = store_model(MODEL_SAVE_PATH, NAME, model)

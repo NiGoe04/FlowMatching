@@ -54,6 +54,7 @@ model_path = os.path.join(MODEL_SAVE_PATH, "model_3D_2025-11-03_14-26-42.pth")
 # training
 if TRAIN_MODEL:
     trainer.training_loop(loader)
+
 if SAVE_MODEL:
     # noinspection PyRedeclaration
     model_path = store_model(MODEL_SAVE_PATH, NAME, model)
