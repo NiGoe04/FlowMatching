@@ -1,6 +1,7 @@
 from flow_matching.utils import ModelWrapper
 import torch
-from torch import nn
+import torch.nn as nn
+
 class SimpleVelocityField(nn.Module):
     def __init__(self, dim, h):
         super().__init__()

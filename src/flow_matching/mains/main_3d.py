@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from src.flow_matching.controller.cond_trainer import CondTrainer
 from src.flow_matching.controller.utils import store_model, load_model_3d
 from src.flow_matching.model.coupling import Coupler
-from src.flow_matching.model.velocity_field import SimpleVelocityModel
+from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
 from src.flow_matching.view.utils import plot_tensor_3d
 
 # steering console
@@ -27,8 +27,9 @@ PARAMS = {
     "batch_size": 256,
     "learning_rate": 1e-2,
     "size_train_set": 1000000,
-    "amount_samples": 1000,
+    "amount_samples": 2000,
     "solver_steps": 100,
+    "solver_method": 'midpoint'
 }
 
 # data
@@ -61,7 +62,7 @@ if SAMPLE_FROM_MODEL:
     model = load_model_3d(SimpleVelocityModel, model_path)
     x_0_sample = torch.randn(PARAMS["amount_samples"], 3)
     solver = ODESolver(velocity_model=model)
-    x_1_sample = solver.sample(x_init=x_0_sample, method='midpoint', step_size=1.0 / PARAMS["solver_steps"])
+    x_1_sample = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"], step_size=1.0 / PARAMS["solver_steps"])
 
     plot_tensor_3d(x_1_sample, params=PARAMS)
 
