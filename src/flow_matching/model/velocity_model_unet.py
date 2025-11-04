@@ -102,6 +102,6 @@ class DecoderBlockFinal(nn.Module):
         return x
 
 class UnetVelocityModel(ModelWrapper):
-    def __init__(self, dropout_rate):
-        model = UnetVelocityField(dropout_rate)
+    def __init__(self, dropout_rate, device):
+        model = UnetVelocityField(dropout_rate).to(device)
         super().__init__(model)

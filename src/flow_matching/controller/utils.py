@@ -42,7 +42,7 @@ def load_model_n_dim(dim, model_path, device="cpu"):
 
     return model
 
-def load_model_unet(model_path, dropout_rate, device="cpu"):
+def load_model_unet(model_path, dropout_rate, device: torch.device):
     """
     Loads a UNet-based velocity field model from disk.
 
@@ -55,7 +55,7 @@ def load_model_unet(model_path, dropout_rate, device="cpu"):
         model (nn.Module): The loaded UNet model in eval mode.
     """
     # Instantiate the model architecture
-    model = UnetVelocityModel(dropout_rate=dropout_rate)
+    model = UnetVelocityModel(dropout_rate=dropout_rate, device=device)
 
     # Load the saved weights
     state_dict = torch.load(model_path, map_location=device)
@@ -68,7 +68,7 @@ def load_model_unet(model_path, dropout_rate, device="cpu"):
     return model
 
 
-def load_mnist_tensor(size_set: int = 1000, train: bool = True, device='cpu') -> Tensor:
+def load_mnist_tensor(size_set, device: torch.device, train: bool = True) -> Tensor:
     """
     Loads a subset of the MNIST dataset and returns it as a tensor of shape [N, 1, H, W].
 

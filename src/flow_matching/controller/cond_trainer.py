@@ -7,16 +7,18 @@ from src.flow_matching.controller.smart_logger import SmartLogger
 from src.flow_matching.model.losses import ConditionalFMLoss
 
 class CondTrainer:
-    def __init__(self, model, optimizer, path: ProbPath, num_epochs, verbose=True, monitoring_int=50):
-        self.model = model
+    def __init__(self, model, optimizer, path: ProbPath, num_epochs, device, verbose=True, monitoring_int=50):
+        self.model = model.to(device)
         self.path = path
         self.optimizer = optimizer
         self.num_epochs = num_epochs
+        self.device = device
         self.criterion = ConditionalFMLoss()
         self.logger = SmartLogger(verbose=verbose)
         self.monitoring_int = monitoring_int
 
     def training_loop(self, loader: DataLoader):
+        self.logger.log_device(self.device)
         self.logger.log_training_start()
         for epoch in range(self.num_epochs):
             self.logger.log_epoch(epoch)
@@ -24,12 +26,14 @@ class CondTrainer:
             self._validate(loader)
         self.logger.log_training_end()
 
+    # noinspection PyUnresolvedReferences
     def _train(self, loader: DataLoader):
         self.model.train()
         for batch_id, (x_0, x_1) in enumerate(loader):
+            x_0 = x_0.to(self.device)
+            x_1 = x_1.to(self.device)
             batch_size = x_1.shape[0]
-            t = torch.rand(batch_size)  # Randomize time t ∼ U[0, 1]
-            # noinspection PyTypeChecker
+            t = torch.rand(batch_size, device=self.device)  # Randomize time t ∼ U[0, 1]
             sample: PathSample = self.path.sample(t=t, x_0=x_0, x_1=x_1)
             if batch_id % self.monitoring_int == 0:
                 self.logger.add_training_sample(sample)
@@ -45,12 +49,14 @@ class CondTrainer:
         epoch_train_loss = self._compute_epoch_loss(samples)
         self.logger.log_epoch_train_loss(epoch_train_loss)
 
+    # noinspection PyUnresolvedReferences
     def _validate(self, loader: DataLoader):
         for batch_id, (x_0, x_1) in enumerate(loader):
+            x_0 = x_0.to(self.device)
+            x_1 = x_1.to(self.device)
             batch_size = x_1.shape[0]
             if batch_id % self.monitoring_int == 0: # only validate on limited samples
-                t = torch.rand(batch_size)  # Randomize time t ∼ U[0, 1]
-                # noinspection PyTypeChecker
+                t = torch.rand(batch_size, device=self.device)  # Randomize time t ∼ U[0, 1]
                 sample: PathSample = self.path.sample(t=t, x_0=x_0, x_1=x_1)
                 self.logger.add_validation_sample(sample)
         # calculate epoch validation loss

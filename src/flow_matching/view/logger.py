@@ -37,6 +37,10 @@ class Logger:
         content = "Validation loss: {}".format(loss)
         self._create_msg(content)
 
+    def log_device(self, device):
+        content = "Device: {}".format(device)
+        self._create_msg(content)
+
     def _get_next_id(self):
         next_id = self.next_id
         self.next_id += 1
