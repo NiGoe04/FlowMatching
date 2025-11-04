@@ -1,5 +1,6 @@
 import torch
 import matplotlib.pyplot as plt
+from flow_matching.path import ProbPath
 from torch.utils.data import DataLoader
 
 class LRFinder:
@@ -7,8 +8,9 @@ class LRFinder:
     A simple learning rate finder for PyTorch models.
     Sweeps learning rates exponentially and tracks loss.
     """
-    def __init__(self, model, optimizer, criterion, device='cpu'):
+    def __init__(self, model, optimizer, path: ProbPath, criterion, device='cpu'):
         self.model = model
+        self.path = path
         self.optimizer = optimizer
         self.criterion = criterion
         self.device = device
@@ -40,10 +42,8 @@ class LRFinder:
             x_1 = x_1.to(self.device)
 
             t = torch.rand(x_0.size(0), device=self.device)
-            # your path.sample call here if needed, e.g.
-            # sample = path.sample(t=t, x_0=x_0, x_1=x_1)
-            # x_t, dx_t = sample.x_t, sample.dx_t
-            x_t, dx_t = x_1, x_0  # placeholder: replace with your actual sample
+            sample = self.path.sample(t=t, x_0=x_0, x_1=x_1)
+            x_t, dx_t = sample.x_t, sample.dx_t
 
             self.optimizer.zero_grad()
             output = self.model(x_t, t)

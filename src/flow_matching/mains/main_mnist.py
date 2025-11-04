@@ -17,8 +17,8 @@ from src.flow_matching.view.utils import visualize_mnist_samples
 # steering console
 NAME = "MNIST"
 FIND_LR = False
-TRAIN_MODEL = True
-SAVE_MODEL = True
+TRAIN_MODEL = False
+SAVE_MODEL = False
 SAMPLE_FROM_MODEL = True
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -56,7 +56,7 @@ model_path = os.path.join(MODEL_SAVE_PATH, "model_MNIST_2025_70k-11-04_17-46-12.
 
 # learning rate
 if FIND_LR:
-    lr_finder = LRFinder(model, optimizer, ConditionalFMLoss(), device=DEVICE)
+    lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)
     lr_finder.range_test(loader, lr_start=1e-6, lr_end=1.0, num_iters=100)
     lr_finder.plot()
 
