@@ -37,5 +37,5 @@ class SmartLogger:
     def log_epoch_val_loss(self, loss):
         self.logger.log_epoch_validation_loss(loss)
 
-    def log_device(self, device):
-        self.logger.log_device(device)
+    def log_device_and_params(self, device, num_params):
+        self.logger.log_device_and_params(device, num_params)

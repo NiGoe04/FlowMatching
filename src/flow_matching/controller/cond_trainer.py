@@ -20,7 +20,8 @@ class CondTrainer:
         self.monitoring_int = monitoring_int
 
     def training_loop(self, loader: DataLoader):
-        self.logger.log_device(self.device)
+        num_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+        self.logger.log_device_and_params(self.device, num_params)
         self.logger.log_training_start()
         for epoch in range(self.num_epochs):
             self.logger.log_epoch(epoch)
