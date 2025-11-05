@@ -15,10 +15,10 @@ from src.flow_matching.model.velocity_model_unet import UnetVelocityModel
 from src.flow_matching.view.utils import visualize_mnist_samples
 
 # steering console
-NAME = "MNIST"
+SET_TYPE = "MNIST_F" # "MNIST_F" -> Fashion-MNIST, "MNIST_N" -> Standard MNIST
 FIND_LR = False
-TRAIN_MODEL = False
-SAVE_MODEL = False
+TRAIN_MODEL = True
+SAVE_MODEL = True
 SAMPLE_FROM_MODEL = True
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -30,14 +30,14 @@ PARAMS = {
     "batch_size": 32,
     "dropout_rate_model": 0.06,
     "learning_rate": 1e-3,
-    "size_train_set": 70000,
+    "size_train_set": 60000,
     "amount_samples": 16,
     "solver_steps": 200,
     "solver_method": 'midpoint'
 }
 
 # data
-x_1_train = load_mnist_tensor(PARAMS["size_train_set"], DEVICE)
+x_1_train = load_mnist_tensor(PARAMS["size_train_set"], device=DEVICE, set_type=SET_TYPE)
 x_0_train = torch.randn_like(x_1_train, device=DEVICE)
 coupler = Coupler(x_0_train, x_1_train)
 coupling = coupler.get_independent_coupling()
@@ -66,7 +66,7 @@ if TRAIN_MODEL:
 
 if SAVE_MODEL:
     # noinspection PyRedeclaration
-    model_path = store_model(MODEL_SAVE_PATH, NAME, model)
+    model_path = store_model(MODEL_SAVE_PATH, SET_TYPE, model)
 
 if SAMPLE_FROM_MODEL:
     model = load_model_unet(model_path, PARAMS["dropout_rate_model"], DEVICE)
@@ -74,5 +74,5 @@ if SAMPLE_FROM_MODEL:
     solver = ODESolver(velocity_model=model)
     x_1_sample = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"], step_size=1.0 / PARAMS["solver_steps"])
 
-    visualize_mnist_samples(x_1_sample, n_samples=16)
+    visualize_mnist_samples(x_1_sample, n_samples=PARAMS["amount_samples"])
 

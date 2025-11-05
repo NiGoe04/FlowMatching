@@ -68,33 +68,48 @@ def load_model_unet(model_path, dropout_rate, device: torch.device):
     return model
 
 
-def load_mnist_tensor(size_set, device: torch.device, train: bool = True) -> Tensor:
+def load_mnist_tensor(size_set: int, device: torch.device = "cpu", set_type: str = "MNIST_N", train: bool = True) -> Tensor:
     """
-    Loads a subset of the MNIST dataset and returns it as a tensor of shape [N, 1, H, W].
+    Loads a subset of either the standard MNIST or Fashion-MNIST dataset and returns it as a tensor of shape [N, 1, H, W].
 
     Args:
         size_set (int): Number of samples to return.
+        device (torch.device): Device ('cpu' or 'cuda') to load the data onto.
+        set_type (str): "MNIST_N" for standard MNIST, "MNIST_F" for Fashion-MNIST.
         train (bool): Whether to load the training or test set.
-        device (str): 'cpu' or 'cuda' device for the tensor.
 
     Returns:
-        Tensor: MNIST images as tensor [N, 1, H, W], dtype=torch.float32, normalized to [0,1].
+        Tensor: Images as tensor [N, 1, H, W], dtype=torch.float32, normalized to [0,1].
     """
-    # Prepare path
-    dataset_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../datasets/mnist')
-    os.makedirs(dataset_dir, exist_ok=True)  # create folder if not exists
+    # Prepare dataset directory
+    dataset_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../datasets')
+    os.makedirs(dataset_dir, exist_ok=True)
 
     # Transform to tensor and normalize to [0,1]
     transform = transforms.ToTensor()
 
-    # Check if dataset already exists
-    download_flag = not os.path.exists(os.path.join(dataset_dir, 'MNIST/raw'))
+    # Determine which dataset to load
+    if set_type == "MNIST_N":
+        dataset_name = "mnist"
+        dataset_class = datasets.MNIST
+    elif set_type == "MNIST_F":
+        dataset_name = "fashion_mnist"
+        dataset_class = datasets.FashionMNIST
+    else:
+        raise ValueError(f"Invalid dataset type '{set_type}'. Use 'MNIST_N' or 'MNIST_F'.")
 
-    mnist_dataset = datasets.MNIST(root=dataset_dir, train=train, download=download_flag, transform=transform)
+    # Full path for this dataset
+    dataset_path = os.path.join(dataset_dir, dataset_name)
+
+    # Only download if the dataset directory doesn't exist yet
+    download_flag = not os.path.exists(os.path.join(dataset_path, 'raw'))
+
+    # Load the dataset
+    dataset = dataset_class(root=dataset_path, train=train, download=download_flag, transform=transform)
 
     # Take only first `size_set` samples
-    size_set = min(size_set, len(mnist_dataset))
-    images = [mnist_dataset[i][0] for i in range(size_set)]
+    size_set = min(size_set, len(dataset))
+    images = [dataset[i][0] for i in range(size_set)]
 
     # Stack into one tensor of shape [N, 1, H, W]
     images_tensor = torch.stack(images).to(device)
