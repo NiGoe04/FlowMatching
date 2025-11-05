@@ -26,9 +26,9 @@ MODEL_SAVE_PATH = "../../../models"
 
 # hyperparams
 PARAMS = {
-    "num_epochs": 20,
+    "num_epochs": 15,
     "batch_size": 32,
-    "dropout_rate_model": 0.06,
+    "dropout_rate_model": 0.00,
     "learning_rate": 1e-3,
     "size_train_set": 60000,
     "amount_samples": 16,
@@ -52,15 +52,14 @@ model = UnetVelocityModel(dropout_rate=PARAMS["dropout_rate_model"], device=DEVI
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
 trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], DEVICE)
-model_path = os.path.join(MODEL_SAVE_PATH, "model_MNIST_2025-11-04_22-20-18.pth")
+model_path = os.path.join(MODEL_SAVE_PATH, "model_MNIST_F_2025-11-05_13-38-27.pth")
 
-# learning rate
+# execution
 if FIND_LR:
     lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)
     lr_finder.range_test(loader, lr_start=1e-6, lr_end=1.0, num_iters=100)
     lr_finder.plot()
 
-# training
 if TRAIN_MODEL:
     trainer.training_loop(loader)
 

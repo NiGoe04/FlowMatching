@@ -15,9 +15,11 @@ class UnetVelocityField(nn.Module):
         super().__init__()
         # Encoder blocks
         self.enc1 = EncoderBlockGeneric(2, 16, dropout_rate)   # 2 input channels: image + t
-        self.enc2 = EncoderBlockBottleneck(16, 32, dropout_rate)
+        self.enc2 = EncoderBlockGeneric(16, 32, dropout_rate)   # 2 input channels: image + t
+        self.enc3 = EncoderBlockBottleneck(32, 64, dropout_rate)
         # Decoder blocks
-        self.dec2 = DecoderBlockBottleneck(32, 16, dropout_rate)
+        self.dec3 = DecoderBlockBottleneck(64, 32, dropout_rate)
+        self.dec2 = DecoderBlockGeneric(32, 16, dropout_rate)
         self.dec1 = DecoderBlockFinal(16, dropout_rate, apply_sigmoid=False)
 
     def forward(self, x, t):
@@ -28,9 +30,11 @@ class UnetVelocityField(nn.Module):
 
         # Encoder
         x, skip1 = self.enc1(x_in)
-        x = self.enc2(x)
+        x, skip2 = self.enc2(x)
+        x = self.enc3(x)
         # Decoder
-        x = self.dec2(x)
+        x = self.dec3(x)
+        x = self.dec2(x, skip2)
         x = self.dec1(x, skip1)
         return x
 
@@ -65,6 +69,26 @@ class EncoderBlockBottleneck(nn.Module):
         x = self.dropout(x)
         return x
 
+class DecoderBlockGeneric(nn.Module):
+    def __init__(self, in_channels, out_channels, dropout_rate):
+        super().__init__()
+        in_chan_skip = 2 * in_channels
+        self.conv1 = nn.Conv2d(in_chan_skip, in_channels, kernel_size=KERNEL_SIZE_CONV, padding=PADDING)
+        self.bn1 = nn.BatchNorm2d(in_channels)
+        self.conv2 = nn.Conv2d(in_channels, in_channels, kernel_size=KERNEL_SIZE_CONV, padding=PADDING)
+        self.bn2 = nn.BatchNorm2d(in_channels)
+        self.dropout = nn.Dropout2d(p=dropout_rate)
+        self.upconv = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=KERNEL_SIZE_RESAMPLE, stride=STRIDE_RESAMPLE)
+
+    def forward(self, x, skip_connection):
+        x = torch.cat([x, skip_connection], dim=1)
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = self.dropout(x)
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = self.dropout(x)
+        x = self.upconv(x)
+        return x
+
 class DecoderBlockBottleneck(nn.Module):
     def __init__(self, in_channels, out_channels, dropout_rate):
         super().__init__()
@@ -82,8 +106,9 @@ class DecoderBlockBottleneck(nn.Module):
 class DecoderBlockFinal(nn.Module):
     def __init__(self, in_channels, dropout_rate, apply_sigmoid):
         super().__init__()
+        in_chan_skip = 2 * in_channels
         self.apply_sigmoid = apply_sigmoid
-        self.conv1 = nn.Conv2d(2*in_channels, in_channels, kernel_size=KERNEL_SIZE_CONV, padding=PADDING)
+        self.conv1 = nn.Conv2d(in_chan_skip, in_channels, kernel_size=KERNEL_SIZE_CONV, padding=PADDING)
         self.bn1 = nn.BatchNorm2d(in_channels)
         self.conv2 = nn.Conv2d(in_channels, in_channels, kernel_size=KERNEL_SIZE_CONV, padding=PADDING)
         self.bn2 = nn.BatchNorm2d(in_channels)
