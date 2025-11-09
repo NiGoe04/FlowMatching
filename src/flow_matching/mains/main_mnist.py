@@ -19,8 +19,8 @@ SET_TYPE = "MNIST_F" # "MNIST_F" -> Fashion-MNIST, "MNIST_N" -> Standard MNIST
 FIND_LR = False
 TRAIN_MODEL = False
 SAVE_MODEL = False
-GENERATE_SAMPLES = True
-VISUALIZE_TIME = False
+GENERATE_SAMPLES = False
+VISUALIZE_TIME = True
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MODEL_SAVE_PATH = "../../../models"
@@ -32,10 +32,10 @@ PARAMS = {
     "dropout_rate_model": 0.00,
     "learning_rate": 1e-3,
     "size_train_set": 60000,
-    "amount_samples": 16,
+    "amount_samples": 4,
     "solver_steps": 200,
     "num_times_to_visualize": 30,
-    "t_end": 1.3,
+    "t_end": 1.05,
     "solver_method": 'midpoint'
 }
 
@@ -55,6 +55,8 @@ model = UnetVelocityModel(dropout_rate=PARAMS["dropout_rate_model"], device=DEVI
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
 trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], DEVICE)
+# model_MNIST_F_2025-11-05_16-02-20.pth
+# model_MNIST_N_2025-11-05_21-15-20.pth
 model_path = os.path.join(MODEL_SAVE_PATH, "model_MNIST_F_2025-11-05_16-02-20.pth")
 
 # execution
