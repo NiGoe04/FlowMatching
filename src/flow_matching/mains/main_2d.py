@@ -14,7 +14,7 @@ from src.flow_matching.controller.utils import store_model, load_model_n_dim
 from src.flow_matching.model.coupling import Coupler
 from src.flow_matching.model.losses import ConditionalFMLoss
 from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
-from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_data_slider_ndim
+from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_ndim
 
 # steering console
 NAME = "2D"
@@ -85,4 +85,4 @@ if VISUALIZE_TIME:
     time_grid = torch.linspace(0.0, PARAMS["t_end"], steps=PARAMS["num_times_to_visualize"], device=DEVICE)
     x_1_samples = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"], step_size=1.0 / PARAMS["solver_steps"],
                                 return_intermediates=True, time_grid=time_grid)
-    visualize_multi_data_slider_ndim(x_1_samples, time_grid)
+    visualize_multi_slider_ndim(x_1_samples, time_grid)

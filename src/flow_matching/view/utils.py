@@ -109,21 +109,22 @@ def visualize_mnist_samples(tensor: torch.Tensor, n_samples: int = 16, title: st
     plt.show()
 
 
-def visualize_multi_data_slider_ndim(tensors: Sequence[torch.Tensor],
-                                     t_values: torch.Tensor):
+def visualize_multi_slider_ndim(tensors: Sequence[torch.Tensor],
+                                time_grid: torch.Tensor):
     """
     Visualize n-dimensional ODE solutions with a slider over time.
     Only supports 2D or 3D data (D=2 or D=3) for now.
 
     Args:
         tensors (Sequence[torch.Tensor]): List of tensors, each shape [N, D].
-        t_values (torch.Tensor): Tensor of times, shape [len(ode_solutions)].
+        time_grid (torch.Tensor): Tensor of times, shape [len(ode_solutions)].
     """
-    assert len(tensors) == len(t_values), "Number of solutions must match number of times."
+    assert len(tensors) == len(time_grid), "Number of solutions must match number of times."
+
+    pos_slider = (0.2, 0.02, 0.6, 0.03)
 
     plt.switch_backend("tkagg")
 
-    left, bottom, width, height = 0.2, 0.02, 0.6, 0.03
     # Determine dimensionality
     N, D = tensors[0].shape
     if D not in [2, 3]:
@@ -136,27 +137,91 @@ def visualize_multi_data_slider_ndim(tensors: Sequence[torch.Tensor],
     else:
         ax = fig.add_subplot(111)
 
-    # tensors must be on host for scatter
+    # need to use CPU for plotting
     tensors = [tensor.cpu() for tensor in tensors]
 
     scatter = ax.scatter(*tensors[0].T)
-    ax.set_title(f"t = {t_values[0].item():.3f}")
+    ax.set_title(f"t = {time_grid[0].item():.3f}")
 
     # Slider
-    ax_slider = plt.axes((left, bottom, width, height))
-    slider = Slider(ax_slider, 't', float(t_values.min()), float(t_values.max()), valinit=float(t_values[0]))
+    ax_slider = plt.axes(pos_slider)
+    slider = Slider(ax_slider, 't', float(time_grid.min()), float(time_grid.max()), valinit=float(time_grid[0]))
 
     # noinspection PyUnusedLocal
     def update(val):
         # Find nearest time index
         t_val = slider.val
-        idx = (torch.abs(t_values - t_val)).argmin().item()
+        idx = (torch.abs(time_grid - t_val)).argmin().item()
         points = tensors[idx]
 
         scatter.set_offsets(points)
-        ax.set_title(f"t = {t_values[idx].item():.3f}")
+        ax.set_title(f"t = {time_grid[idx].item():.3f}")
         fig.canvas.draw_idle()
 
     slider.on_changed(update)
     plt.show()
 
+def visualize_multi_slider_mnist(tensors: Sequence[torch.Tensor],
+                                 t_values: torch.Tensor,
+                                 num_samples: int = 16,
+                                 shuffle: bool = True,
+                                 title_prefix: str = "MNIST Samples"):
+    """
+    Visualize MNIST ODE solutions with a slider over time.
+    Shows a grid of images for each time step.
+
+    Args:
+        tensors (Sequence[torch.Tensor]): List of tensors, each shape [N, 1, H, W].
+        t_values (torch.Tensor): Tensor of times, shape [len(tensors)].
+        num_samples (int): How many images to display in the grid.
+        shuffle (bool): Whether to randomly select images.
+        title_prefix (str): Prefix for the plot title.
+    """
+    assert len(tensors) == len(t_values), "Number of solutions must match number of times."
+
+    pos_layout = (0, 0.05, 1, 0.95)
+    pos_slider = (0.2, 0.02, 0.6, 0.03)
+
+    plt.switch_backend("tkagg")
+
+    # need to use CPU for plotting
+    tensors = [tensor.cpu() for tensor in tensors]
+    N, C, H, W = tensors[0].shape
+    if C != 1:
+        raise ValueError(f"Expected single-channel tensors, got {C} channels")
+
+    num_samples = min(num_samples, N)
+    indices = torch.randperm(N)[:num_samples] if shuffle else torch.arange(num_samples)
+
+    n_cols = int(num_samples ** 0.5)
+    n_rows = (num_samples + n_cols - 1) // n_cols
+
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols * 2, n_rows * 2))
+    axes = axes.flatten()
+
+    # Initial display
+    for i in range(num_samples):
+        axes[i].imshow(tensors[0][indices[i], 0].numpy(), cmap="gray")
+        axes[i].axis("off")
+
+    for i in range(num_samples, len(axes)):
+        axes[i].axis("off")
+
+    plt.suptitle(f"{title_prefix} at t = {t_values[0].item():.3f}")
+    plt.tight_layout(rect=pos_layout)
+
+    # Slider axes
+    ax_slider = plt.axes(pos_slider)
+    slider = Slider(ax_slider, 't', float(t_values.min()), float(t_values.max()), valinit=float(t_values[0]))
+
+    # noinspection PyUnusedLocal
+    def update(val):
+        t_val = slider.val
+        idx = (torch.abs(t_values - t_val)).argmin().item()
+        for j in range(num_samples):
+            axes[j].imshow(tensors[idx][indices[j], 0].numpy(), cmap="gray")
+        plt.suptitle(f"{title_prefix} at t = {t_values[idx].item():.3f}")
+        fig.canvas.draw_idle()
+
+    slider.on_changed(update)
+    plt.show()
