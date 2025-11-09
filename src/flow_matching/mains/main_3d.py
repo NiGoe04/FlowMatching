@@ -21,7 +21,7 @@ NAME = "3D"
 FIND_LR = False
 TRAIN_MODEL = False
 SAVE_MODEL = False
-SAMPLE_FROM_MODEL = True
+GENERATE_SAMPLES = True
 
 DIM = 3
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -32,7 +32,7 @@ PARAMS = {
     "batch_size": 128,
     "learning_rate": 2e-3,
     "size_train_set": 100000,
-    "amount_samples": 1000,
+    "amount_samples": 2000,
     "solver_steps": 100,
     "solver_method": 'midpoint'
 }
@@ -69,11 +69,10 @@ if SAVE_MODEL:
     # noinspection PyRedeclaration
     model_path = store_model(MODEL_SAVE_PATH, NAME, model)
 
-if SAMPLE_FROM_MODEL:
+if GENERATE_SAMPLES:
     model = load_model_n_dim(DIM, model_path, device=DEVICE)
-    x_0_sample = torch.randn(PARAMS["amount_samples"], DIM, device=DEVICE)
     solver = ODESolver(velocity_model=model)
+    x_0_sample = torch.randn(PARAMS["amount_samples"], DIM, device=DEVICE)
     x_1_sample = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"], step_size=1.0 / PARAMS["solver_steps"])
-
     plot_tensor_3d(x_1_sample, params=PARAMS)
 

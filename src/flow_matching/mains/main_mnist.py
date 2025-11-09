@@ -19,7 +19,7 @@ SET_TYPE = "MNIST_F" # "MNIST_F" -> Fashion-MNIST, "MNIST_N" -> Standard MNIST
 FIND_LR = True
 TRAIN_MODEL = False
 SAVE_MODEL = False
-SAMPLE_FROM_MODEL = False
+GENERATE_SAMPLES = False
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MODEL_SAVE_PATH = "../../../models"
@@ -67,11 +67,10 @@ if SAVE_MODEL:
     # noinspection PyRedeclaration
     model_path = store_model(MODEL_SAVE_PATH, SET_TYPE, model)
 
-if SAMPLE_FROM_MODEL:
+if GENERATE_SAMPLES:
     model = load_model_unet(model_path, PARAMS["dropout_rate_model"], DEVICE)
-    x_0_sample = torch.randn(PARAMS["amount_samples"], *x_0_train.shape[1:], device=DEVICE)
     solver = ODESolver(velocity_model=model)
+    x_0_sample = torch.randn(PARAMS["amount_samples"], *x_0_train.shape[1:], device=DEVICE)
     x_1_sample = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"], step_size=1.0 / PARAMS["solver_steps"])
-
     visualize_mnist_samples(x_1_sample, n_samples=PARAMS["amount_samples"])
 

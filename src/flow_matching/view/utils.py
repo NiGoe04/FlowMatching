@@ -2,6 +2,7 @@ from typing import *
 
 import matplotlib.pyplot as plt
 import torch
+from matplotlib.widgets import Slider
 
 
 def plot_tensor_2d(points: torch.Tensor,
@@ -105,5 +106,57 @@ def visualize_mnist_samples(tensor: torch.Tensor, n_samples: int = 16, title: st
 
     plt.suptitle(title)
     plt.tight_layout()
+    plt.show()
+
+
+def visualize_multi_data_slider_ndim(tensors: Sequence[torch.Tensor],
+                                     t_values: torch.Tensor):
+    """
+    Visualize n-dimensional ODE solutions with a slider over time.
+    Only supports 2D or 3D data (D=2 or D=3) for now.
+
+    Args:
+        tensors (Sequence[torch.Tensor]): List of tensors, each shape [N, D].
+        t_values (torch.Tensor): Tensor of times, shape [len(ode_solutions)].
+    """
+    assert len(tensors) == len(t_values), "Number of solutions must match number of times."
+
+    plt.switch_backend("tkagg")
+
+    left, bottom, width, height = 0.2, 0.02, 0.6, 0.03
+    # Determine dimensionality
+    N, D = tensors[0].shape
+    if D not in [2, 3]:
+        raise ValueError("Only 2D or 3D data is supported for visualization.")
+
+    # Initial plot
+    fig = plt.figure(figsize=(6, 6))
+    if D == 3:
+        ax = fig.add_subplot(111, projection='3d')
+    else:
+        ax = fig.add_subplot(111)
+
+    # tensors must be on host for scatter
+    tensors = [tensor.cpu() for tensor in tensors]
+
+    scatter = ax.scatter(*tensors[0].T)
+    ax.set_title(f"t = {t_values[0].item():.3f}")
+
+    # Slider
+    ax_slider = plt.axes((left, bottom, width, height))
+    slider = Slider(ax_slider, 't', float(t_values.min()), float(t_values.max()), valinit=float(t_values[0]))
+
+    # noinspection PyUnusedLocal
+    def update(val):
+        # Find nearest time index
+        t_val = slider.val
+        idx = (torch.abs(t_values - t_val)).argmin().item()
+        points = tensors[idx]
+
+        scatter.set_offsets(points)
+        ax.set_title(f"t = {t_values[idx].item():.3f}")
+        fig.canvas.draw_idle()
+
+    slider.on_changed(update)
     plt.show()
 

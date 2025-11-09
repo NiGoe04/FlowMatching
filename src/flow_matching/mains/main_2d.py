@@ -14,14 +14,15 @@ from src.flow_matching.controller.utils import store_model, load_model_n_dim
 from src.flow_matching.model.coupling import Coupler
 from src.flow_matching.model.losses import ConditionalFMLoss
 from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
-from src.flow_matching.view.utils import plot_tensor_2d
+from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_data_slider_ndim
 
 # steering console
 NAME = "2D"
 FIND_LR = False
 TRAIN_MODEL = False
 SAVE_MODEL = False
-SAMPLE_FROM_MODEL = True
+GENERATE_SAMPLES = False
+VISUALIZE_TIME = True
 
 DIM = 2
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -32,8 +33,10 @@ PARAMS = {
     "batch_size": 256,
     "learning_rate": 1e-2,
     "size_train_set": 200000,
-    "amount_samples": 5000,
+    "amount_samples": 500,
     "solver_steps": 100,
+    "num_times_to_visualize": 150,
+    "t_end": 1.0,   # just for time visualization
     "solver_method": 'midpoint'
 }
 
@@ -68,11 +71,18 @@ if SAVE_MODEL:
     # noinspection PyRedeclaration
     model_path = store_model(MODEL_SAVE_PATH, NAME, model)
 
-if SAMPLE_FROM_MODEL:
+if GENERATE_SAMPLES:
     model = load_model_n_dim(DIM, model_path, device=DEVICE)
-    x_0_sample = torch.randn(PARAMS["amount_samples"], DIM, device=DEVICE)
     solver = ODESolver(velocity_model=model)
+    x_0_sample = torch.randn(PARAMS["amount_samples"], DIM, device=DEVICE)
     x_1_sample = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"], step_size=1.0 / PARAMS["solver_steps"])
-
     plot_tensor_2d(x_1_sample, params=PARAMS)
 
+if VISUALIZE_TIME:
+    model = load_model_n_dim(DIM, model_path, device=DEVICE)
+    solver = ODESolver(velocity_model=model)
+    x_0_sample = torch.randn(PARAMS["amount_samples"], DIM, device=DEVICE)
+    time_grid = torch.linspace(0.0, PARAMS["t_end"], steps=PARAMS["num_times_to_visualize"], device=DEVICE)
+    x_1_samples = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"], step_size=1.0 / PARAMS["solver_steps"],
+                                return_intermediates=True, time_grid=time_grid)
+    visualize_multi_data_slider_ndim(x_1_samples, time_grid)
