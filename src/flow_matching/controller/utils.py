@@ -30,7 +30,7 @@ def store_model(save_dir_path, approach_name, model):
 
 def load_model_n_dim(dim, model_path, device="cpu"):
     # Create an instance of the model architecture
-    model = SimpleVelocityModel(dim=dim)
+    model = SimpleVelocityModel(dim=dim, device=device)
 
     # Load the saved weights
     state_dict = torch.load(model_path, map_location=device)

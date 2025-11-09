@@ -10,6 +10,8 @@ class SimpleVelocityField(nn.Module):
             nn.ELU(),
             nn.Linear(h, h),
             nn.ELU(),
+            nn.Linear(h, h),
+            nn.ELU(),
             nn.Linear(h, dim)  # output velocity same shape as x
         )
 
@@ -19,6 +21,6 @@ class SimpleVelocityField(nn.Module):
         return self.net(xt_input)
 
 class SimpleVelocityModel(ModelWrapper):
-    def __init__(self, dim: int = 2, h: int = 64):
-        model = SimpleVelocityField(dim, h)
+    def __init__(self, device, dim: int = 2, h: int = 64):
+        model = SimpleVelocityField(dim, h).to(device)
         super().__init__(model)

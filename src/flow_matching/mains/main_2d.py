@@ -9,32 +9,37 @@ from torch import Tensor
 from torch.utils.data import DataLoader
 
 from src.flow_matching.controller.cond_trainer import CondTrainer
+from src.flow_matching.controller.lr_finder import LRFinder
 from src.flow_matching.controller.utils import store_model, load_model_n_dim
 from src.flow_matching.model.coupling import Coupler
+from src.flow_matching.model.losses import ConditionalFMLoss
 from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
 from src.flow_matching.view.utils import plot_tensor_2d
 
 # steering console
 NAME = "2D"
+FIND_LR = False
 TRAIN_MODEL = False
 SAVE_MODEL = False
 SAMPLE_FROM_MODEL = True
 
+DIM = 2
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MODEL_SAVE_PATH = "../../../models"
 # hyperparams
 PARAMS = {
-    "num_epochs": 3,
+    "num_epochs": 15,
     "batch_size": 256,
     "learning_rate": 1e-2,
-    "size_train_set": 2560000,
-    "amount_samples": 10000,
+    "size_train_set": 200000,
+    "amount_samples": 5000,
     "solver_steps": 100,
     "solver_method": 'midpoint'
 }
 
 # data
-x_0_train = torch.randn(PARAMS["size_train_set"], 2)
-x_1_train = Tensor(make_moons(PARAMS["size_train_set"], noise=0.05)[0])
+x_0_train = torch.randn(PARAMS["size_train_set"], DIM, device=DEVICE)
+x_1_train = Tensor(make_moons(PARAMS["size_train_set"], noise=0.05)[0]).to(DEVICE)
 coupler = Coupler(x_0_train, x_1_train)
 coupling = coupler.get_independent_coupling()
 loader = DataLoader(
@@ -44,11 +49,16 @@ loader = DataLoader(
 )
 
 # model
-model = SimpleVelocityModel()
+model = SimpleVelocityModel(device=DEVICE)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
-trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"])
-model_path = os.path.join(MODEL_SAVE_PATH, "model_2025-11-03_11-35-04.pth")
+trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], device=DEVICE)
+model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_2025-11-09_14-28-07.pth")
+
+if FIND_LR:
+    lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)
+    lr_finder.range_test(loader, lr_start=1e-6, lr_end=1e-1, num_iters=100)
+    lr_finder.plot()
 
 # training
 if TRAIN_MODEL:
@@ -59,8 +69,8 @@ if SAVE_MODEL:
     model_path = store_model(MODEL_SAVE_PATH, NAME, model)
 
 if SAMPLE_FROM_MODEL:
-    model = load_model_n_dim(2, model_path)
-    x_0_sample = torch.randn(PARAMS["amount_samples"], 2)
+    model = load_model_n_dim(DIM, model_path, device=DEVICE)
+    x_0_sample = torch.randn(PARAMS["amount_samples"], DIM, device=DEVICE)
     solver = ODESolver(velocity_model=model)
     x_1_sample = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"], step_size=1.0 / PARAMS["solver_steps"])
 

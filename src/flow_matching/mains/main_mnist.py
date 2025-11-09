@@ -16,10 +16,10 @@ from src.flow_matching.view.utils import visualize_mnist_samples
 
 # steering console
 SET_TYPE = "MNIST_F" # "MNIST_F" -> Fashion-MNIST, "MNIST_N" -> Standard MNIST
-FIND_LR = False
-TRAIN_MODEL = True
-SAVE_MODEL = True
-SAMPLE_FROM_MODEL = True
+FIND_LR = True
+TRAIN_MODEL = False
+SAVE_MODEL = False
+SAMPLE_FROM_MODEL = False
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MODEL_SAVE_PATH = "../../../models"
@@ -52,7 +52,7 @@ model = UnetVelocityModel(dropout_rate=PARAMS["dropout_rate_model"], device=DEVI
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
 trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], DEVICE)
-model_path = os.path.join(MODEL_SAVE_PATH, "model_MNIST_F_2025-11-05_13-38-27.pth")
+model_path = os.path.join(MODEL_SAVE_PATH, "model_MNIST_F_2025-11-05_16-02-20.pth")
 
 # execution
 if FIND_LR:
