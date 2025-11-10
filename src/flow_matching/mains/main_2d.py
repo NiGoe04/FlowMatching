@@ -36,7 +36,7 @@ PARAMS = {
     "amount_samples": 500,
     "solver_steps": 100,
     "num_times_to_visualize": 150,
-    "t_end": 1.0,  # just for time visualization
+    "t_end": 1.0,
     "solver_method": 'midpoint'
 }
 

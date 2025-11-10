@@ -39,6 +39,7 @@ def plot_tensor_2d(points: torch.Tensor,
 
     plt.show()
 
+
 def plot_tensor_3d(points: torch.Tensor, title: str = "3D Scatter Plot", params: dict = None):
     """
     Plots a 3D scatter plot from a tensor of shape [n, 3].
@@ -72,7 +73,9 @@ def plot_tensor_3d(points: torch.Tensor, title: str = "3D Scatter Plot", params:
 
     plt.show()
 
-def visualize_mnist_samples(tensor: torch.Tensor, n_samples: int = 16, title: str = "MNIST Samples", shuffle: bool = False):
+
+def visualize_mnist_samples(tensor: torch.Tensor, n_samples: int = 16, title: str = "MNIST Samples",
+                            shuffle: bool = False):
     """
     Displays a grid of samples from a tensor of shape [N, 1, H, W].
 
@@ -113,7 +116,7 @@ def visualize_multi_slider_ndim(tensors: Sequence[torch.Tensor],
                                 time_grid: torch.Tensor):
     """
     Visualize n-dimensional ODE solutions with a slider over time.
-    Only supports 2D or 3D data (D=2 or D=3) for now.
+    Supports 2D or 3D data (D=2 or D=3).
 
     Args:
         tensors (Sequence[torch.Tensor]): List of tensors, each shape [N, D].
@@ -122,7 +125,6 @@ def visualize_multi_slider_ndim(tensors: Sequence[torch.Tensor],
     assert len(tensors) == len(time_grid), "Number of solutions must match number of times."
 
     pos_slider = (0.2, 0.02, 0.6, 0.03)
-
     plt.switch_backend("tkagg")
 
     # Determine dimensionality
@@ -130,17 +132,22 @@ def visualize_multi_slider_ndim(tensors: Sequence[torch.Tensor],
     if D not in [2, 3]:
         raise ValueError("Only 2D or 3D data is supported for visualization.")
 
+    # Move to CPU for plotting
+    tensors = [tensor.cpu() for tensor in tensors]
+
     # Initial plot
     fig = plt.figure(figsize=(6, 6))
     if D == 3:
         ax = fig.add_subplot(111, projection='3d')
+        all_points = torch.cat(tensors, dim=0)
+        ax.set_xlim(all_points[:, 0].min(), all_points[:, 0].max())
+        ax.set_ylim(all_points[:, 1].min(), all_points[:, 1].max())
+        ax.set_zlim(all_points[:, 2].min(), all_points[:, 2].max())
+        scatter = ax.scatter(*tensors[0].T)
     else:
         ax = fig.add_subplot(111)
+        scatter = ax.scatter(*tensors[0].T)
 
-    # need to use CPU for plotting
-    tensors = [tensor.cpu() for tensor in tensors]
-
-    scatter = ax.scatter(*tensors[0].T)
     ax.set_title(f"t = {time_grid[0].item():.3f}")
 
     # Slider
@@ -149,17 +156,28 @@ def visualize_multi_slider_ndim(tensors: Sequence[torch.Tensor],
 
     # noinspection PyUnusedLocal
     def update(val):
-        # Find nearest time index
-        t_val = slider.val
-        idx = (torch.abs(time_grid - t_val)).argmin().item()
+        nonlocal scatter
+        idx = (torch.abs(time_grid - slider.val)).argmin().item()
         points = tensors[idx]
 
-        scatter.set_offsets(points)
+        if D == 2:
+            scatter.set_offsets(points)
+        else:  # 3D: need to clear and redraw
+            xlim = ax.get_xlim()
+            ylim = ax.get_ylim()
+            zlim = ax.get_zlim()
+            ax.cla()
+            scatter = ax.scatter(*points.T)
+            ax.set_xlim(xlim)
+            ax.set_ylim(ylim)
+            ax.set_zlim(zlim)
+
         ax.set_title(f"t = {time_grid[idx].item():.3f}")
         fig.canvas.draw_idle()
 
     slider.on_changed(update)
     plt.show()
+
 
 def visualize_multi_slider_mnist(tensors: Sequence[torch.Tensor],
                                  t_values: torch.Tensor,
