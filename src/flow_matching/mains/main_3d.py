@@ -73,6 +73,6 @@ if GENERATE_SAMPLES:
     model = load_model_n_dim(DIM, model_path, device=DEVICE)
     solver = ODESolver(velocity_model=model)
     x_0_sample = torch.randn(PARAMS["amount_samples"], DIM, device=DEVICE)
-    x_1_sample = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"], step_size=1.0 / PARAMS["solver_steps"])
+    x_1_sample = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"],
+                               step_size=1.0 / PARAMS["solver_steps"])
     plot_tensor_3d(x_1_sample, params=PARAMS)
-

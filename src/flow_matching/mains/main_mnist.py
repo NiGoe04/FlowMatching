@@ -15,7 +15,7 @@ from src.flow_matching.model.velocity_model_unet import UnetVelocityModel
 from src.flow_matching.view.utils import visualize_mnist_samples, visualize_multi_slider_mnist
 
 # steering console
-SET_TYPE = "MNIST_F" # "MNIST_F" -> Fashion-MNIST, "MNIST_N" -> Standard MNIST
+SET_TYPE = "MNIST_F"  # "MNIST_F" -> Fashion-MNIST, "MNIST_N" -> Standard MNIST
 FIND_LR = False
 TRAIN_MODEL = False
 SAVE_MODEL = False
@@ -76,8 +76,9 @@ if GENERATE_SAMPLES:
     model = load_model_unet(model_path, PARAMS["dropout_rate_model"], DEVICE)
     solver = ODESolver(velocity_model=model)
     x_0_sample = torch.randn(PARAMS["amount_samples"], *x_0_train.shape[1:], device=DEVICE)
-    x_1_sample = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"], step_size=1.0 / PARAMS["solver_steps"],
-                               time_grid = torch.Tensor([0.0, PARAMS["t_end"]]))
+    x_1_sample = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"],
+                               step_size=1.0 / PARAMS["solver_steps"],
+                               time_grid=torch.Tensor([0.0, PARAMS["t_end"]]))
     visualize_mnist_samples(x_1_sample, n_samples=PARAMS["amount_samples"])
 
 if VISUALIZE_TIME:
@@ -85,7 +86,7 @@ if VISUALIZE_TIME:
     solver = ODESolver(velocity_model=model)
     x_0_sample = torch.randn(PARAMS["amount_samples"], *x_0_train.shape[1:], device=DEVICE)
     time_grid = torch.linspace(0.0, PARAMS["t_end"], steps=PARAMS["num_times_to_visualize"], device=DEVICE)
-    x_1_sample = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"], step_size=1.0 / PARAMS["solver_steps"],
+    x_1_sample = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"],
+                               step_size=1.0 / PARAMS["solver_steps"],
                                return_intermediates=True, time_grid=time_grid)
     visualize_multi_slider_mnist(x_1_sample, time_grid, num_samples=PARAMS["amount_samples"])
-

@@ -36,7 +36,7 @@ PARAMS = {
     "amount_samples": 500,
     "solver_steps": 100,
     "num_times_to_visualize": 150,
-    "t_end": 1.0,   # just for time visualization
+    "t_end": 1.0,  # just for time visualization
     "solver_method": 'midpoint'
 }
 
@@ -75,8 +75,9 @@ if GENERATE_SAMPLES:
     model = load_model_n_dim(DIM, model_path, device=DEVICE)
     solver = ODESolver(velocity_model=model)
     x_0_sample = torch.randn(PARAMS["amount_samples"], DIM, device=DEVICE)
-    x_1_sample = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"], step_size=1.0 / PARAMS["solver_steps"],
-                               time_grid = torch.Tensor([0.0, PARAMS["t_end"]]))
+    x_1_sample = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"],
+                               step_size=1.0 / PARAMS["solver_steps"],
+                               time_grid=torch.Tensor([0.0, PARAMS["t_end"]]))
     plot_tensor_2d(x_1_sample, params=PARAMS)
 
 if VISUALIZE_TIME:
@@ -84,6 +85,7 @@ if VISUALIZE_TIME:
     solver = ODESolver(velocity_model=model)
     x_0_sample = torch.randn(PARAMS["amount_samples"], DIM, device=DEVICE)
     time_grid = torch.linspace(0.0, PARAMS["t_end"], steps=PARAMS["num_times_to_visualize"], device=DEVICE)
-    x_1_samples = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"], step_size=1.0 / PARAMS["solver_steps"],
+    x_1_samples = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"],
+                                step_size=1.0 / PARAMS["solver_steps"],
                                 return_intermediates=True, time_grid=time_grid)
     visualize_multi_slider_ndim(x_1_samples, time_grid)
