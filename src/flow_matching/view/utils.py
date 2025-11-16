@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import torch
 from matplotlib.widgets import Slider
 
+from src.flow_matching.controller.utils import get_velocity_field_tensor_2d
+
 
 def plot_tensor_2d(points: torch.Tensor,
                    title: str = "2D Scatter Plot",
@@ -243,3 +245,63 @@ def visualize_multi_slider_mnist(tensors: Sequence[torch.Tensor],
 
     slider.on_changed(update)
     plt.show()
+
+def _visualize_velocity_field_2d(time_range: Tuple, num_times, bounds, field_tensor):
+    """
+    :param time_range: time range (from, to)
+    :param num_times: amount times
+    :param bounds: bounding box size (bottom_left, top_right)
+    :param field_tensor: the field to visualize
+    """
+    plt.switch_backend("tkagg")  # use GUI backend
+    pos_slider = (0.25, 0.1, 0.5, 0.03)
+
+    from_time, to_time = time_range
+    bottom_left, top_right = bounds
+    H, W = field_tensor.shape[1], field_tensor.shape[2]
+
+    # Create coordinate grid
+    x = torch.linspace(bottom_left[0], top_right[0], W)
+    y = torch.linspace(bottom_left[1], top_right[1], H)
+    yy, xx = torch.meshgrid(y, x, indexing='ij')
+    xx, yy = xx.numpy(), yy.numpy()
+
+    field_tensor_np = field_tensor.cpu().numpy()  # convert to numpy
+
+    # Initial plot
+    fig, ax = plt.subplots(figsize=(6, 6))
+    plt.subplots_adjust(bottom=0.25)
+
+    u = field_tensor_np[0, :, :, 0]
+    v = field_tensor_np[0, :, :, 1]
+    quiver = ax.quiver(xx, yy, u, v)
+    ax.set_title(f"Velocity field at time {from_time:.2f}")
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_xlim(bottom_left[0], top_right[0])
+    ax.set_ylim(bottom_left[1], top_right[1])
+    ax.set_aspect('equal')
+
+    # Slider axis
+    ax_slider = plt.axes(pos_slider)
+    slider = Slider(ax_slider, 'Time step', 0, num_times - 1, valinit=0, valstep=1)
+
+    # Update function
+    def update(val):
+        t_index = int(val)
+        t_real = from_time + t_index / (num_times - 1) * (to_time - from_time)
+        u = field_tensor_np[t_index, :, :, 0]
+        v = field_tensor_np[t_index, :, :, 1]
+        quiver.set_UVC(u, v)
+        ax.set_title(f"Velocity field at time {t_real:.2f}")
+        fig.canvas.draw_idle()
+
+    slider.on_changed(update)
+    plt.show()
+
+def visualize_velocity_field_2d(time_range: Tuple, num_times, bounds, density, model, device):
+    field_tensor = get_velocity_field_tensor_2d(time_range, num_times, bounds, density, model, device)
+    _visualize_velocity_field_2d(time_range, num_times, bounds, field_tensor)
+
+
+

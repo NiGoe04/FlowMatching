@@ -1,9 +1,10 @@
+import os
 from datetime import datetime
+from typing import Tuple
 
 import torch
 from torch import Tensor
 from torchvision import datasets, transforms
-import os
 
 from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
 from src.flow_matching.model.velocity_model_unet import UnetVelocityModel
@@ -115,3 +116,43 @@ def load_mnist_tensor(size_set: int, device: torch.device = "cpu", set_type: str
     images_tensor = torch.stack(images).to(device)
 
     return images_tensor
+
+def get_velocity_field_tensor_2d(time_range: Tuple, num_times, bounds, density, model, device) -> Tensor:
+    """
+    :param time_range: time range (from, to)
+    :param num_times: amount times
+    :param bounds: bounding box size (bottom_left, top_right)
+    :param density: value density
+    :param model: the velocity model to sample from
+    :param device: the device ('cpu' or 'cuda')
+    :return: [T, H, W, D] tensor
+    """
+    from_time, to_time = time_range
+    time_grid = torch.linspace(from_time, to_time, num_times, device=device)
+    bottom_left, top_right = bounds
+    H = int(abs(top_right[1] - bottom_left[1]) * density)
+    W = int(abs(top_right[0] - bottom_left[0]) * density)
+    D = len(bottom_left)
+    T = len(time_grid)
+
+    # Create spatial grid
+    x_coords = torch.linspace(bottom_left[0], top_right[0], W, device=device)
+    y_coords = torch.linspace(bottom_left[1], top_right[1], H, device=device)
+    yy, xx = torch.meshgrid(y_coords, x_coords, indexing='ij')  # [H, W]
+    # Stack to [H, W, 2]
+    grid = torch.stack([xx, yy], dim=-1)
+
+    # Prepare output tensor
+    tensor = torch.zeros((T, H, W, D), device=device)
+
+    model.eval()
+    with torch.no_grad():
+        for t_idx, t_val in enumerate(time_grid):
+            t_tensor = torch.tensor([t_val], device=device, dtype=torch.float32)
+            # Broadcast t to match grid shape: [H, W, 1]
+            t_broad = t_tensor.view(*([1] * (grid.dim() - 1)), 1)
+            # Call model on full grid at once
+            v = model(grid, t_broad)
+            tensor[t_idx] = v
+
+    return tensor
