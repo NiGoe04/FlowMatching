@@ -1,6 +1,5 @@
 import os
 
-import numpy as np
 import torch
 from flow_matching.path import AffineProbPath
 from flow_matching.path.scheduler import CondOTScheduler
@@ -15,11 +14,13 @@ from src.flow_matching.controller.utils import store_model, load_model_n_dim
 from src.flow_matching.model.coupling import Coupler
 from src.flow_matching.model.losses import ConditionalFMLoss
 from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
+from src.flow_matching.shared.data_2d import PARAMS
 from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_ndim, visualize_velocity_field_2d
 
 # steering console
 NAME = "2D"
 FIND_LR = False
+PLOT_TRAIN_DATA = False
 TRAIN_MODEL = False
 SAVE_MODEL = False
 GENERATE_SAMPLES = False
@@ -28,25 +29,16 @@ VISUALIZE_FIELD = True
 
 DIM = 2
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-MODEL_SAVE_PATH = "../../../models"
-# hyperparams
-PARAMS = {
-    "num_epochs": 15,
-    "batch_size": 256,
-    "learning_rate": 1e-2,
-    "size_train_set": 2000,
-    "amount_samples": 500,
-    "solver_steps": 100,
-    "num_times_to_visualize": 150,
-    "t_end": 1.0,
-    "field_density": 6,
-    "field_bound": (np.array([-3, -3]), np.array([3, 3])),
-    "solver_method": 'midpoint'
-}
+MODEL_SAVE_PATH = "../../../../models"
 
 # data
 x_0_train = torch.randn(PARAMS["size_train_set"], DIM, device=DEVICE)
 x_1_train = Tensor(make_moons(PARAMS["size_train_set"], noise=0.05)[0]).to(DEVICE)
+
+if PLOT_TRAIN_DATA:
+    plot_tensor_2d(x_0_train)
+    plot_tensor_2d(x_1_train)
+
 coupler = Coupler(x_0_train, x_1_train)
 coupling = coupler.get_independent_coupling()
 loader = DataLoader(
