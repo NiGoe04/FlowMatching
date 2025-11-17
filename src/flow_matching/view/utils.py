@@ -1,10 +1,12 @@
 from typing import *
 
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
 from matplotlib.widgets import Slider
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 (required)
 
-from src.flow_matching.controller.utils import get_velocity_field_tensor_2d
+from src.flow_matching.controller.utils import get_velocity_field_tensor_2d, get_velocity_field_tensor_3d
 
 
 def plot_tensor_2d(points: torch.Tensor,
@@ -303,5 +305,74 @@ def visualize_velocity_field_2d(time_range: Tuple, num_times, bounds, density, m
     field_tensor = get_velocity_field_tensor_2d(time_range, num_times, bounds, density, model, device)
     _visualize_velocity_field_2d(time_range, num_times, bounds, field_tensor)
 
+def _visualize_velocity_field_3d(time_range: Tuple, num_times, bounds, field_tensor):
+    """
+    3D vector field visualization with a single slider for time.
+    :param time_range: (from, to)
+    :param num_times: number of time samples
+    :param bounds: ((x0,y0,z0), (x1,y1,z1))
+    :param field_tensor: [T, D, H, W, 3]
+    """
+    plt.switch_backend("tkagg")
+    pos_slider = (0.25, 0.1, 0.5, 0.03)
 
+    from_time, to_time = time_range
+    bottom_left, top_right = bounds
 
+    T, D, H, W, _ = field_tensor.shape
+    field_np = field_tensor.cpu().numpy()
+
+    # Coordinate grid
+    x = np.linspace(bottom_left[0], top_right[0], W)
+    y = np.linspace(bottom_left[1], top_right[1], H)
+    z = np.linspace(bottom_left[2], top_right[2], D)
+    zz, yy, xx = np.meshgrid(z, y, x, indexing='ij')
+
+    # Flattened coordinates for quiver
+    Xf = xx.flatten()
+    Yf = yy.flatten()
+    Zf = zz.flatten()
+
+    fig = plt.figure(figsize=(9, 7))
+    ax = fig.add_subplot(111, projection='3d')
+    plt.subplots_adjust(bottom=0.25)
+
+    # Initial quiver (time = 0)
+    Uf = field_np[0, :, :, :, 0].flatten()
+    Vf = field_np[0, :, :, :, 1].flatten()
+    Wf = field_np[0, :, :, :, 2].flatten()
+
+    quiver_container = {"obj": ax.quiver(Xf, Yf, Zf, Uf, Vf, Wf, length=0.15, normalize=False)}
+
+    ax.set_title(f"3D velocity field at time {from_time:.2f}")
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
+
+    # Time slider
+    ax_slider = plt.axes(pos_slider)
+    slider = Slider(ax_slider, 'Time', 0, num_times - 1, valinit=0, valstep=1)
+
+    def update(val):
+        t_idx = int(slider.val)
+        t_real = from_time + t_idx / (num_times - 1) * (to_time - from_time)
+
+        old = quiver_container["obj"]
+        if old is not None and old in ax.collections:
+            old.remove()
+
+        Uf = field_np[t_idx, :, :, :, 0].flatten()
+        Vf = field_np[t_idx, :, :, :, 1].flatten()
+        Wf = field_np[t_idx, :, :, :, 2].flatten()
+
+        quiver_container["obj"] = ax.quiver(Xf, Yf, Zf, Uf, Vf, Wf, length=0.15, normalize=False)
+
+        ax.set_title(f"3D velocity field at time {t_real:.2f}")
+        fig.canvas.draw_idle()
+
+    slider.on_changed(update)
+    plt.show()
+
+def visualize_velocity_field_3d(time_range, num_times, bounds, density, model, device):
+    field_tensor = get_velocity_field_tensor_3d(time_range, num_times, bounds, density, model, device)
+    _visualize_velocity_field_3d(time_range, num_times, bounds, field_tensor)

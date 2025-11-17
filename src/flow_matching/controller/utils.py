@@ -156,3 +156,46 @@ def get_velocity_field_tensor_2d(time_range: Tuple, num_times, bounds, density, 
             tensor[t_idx] = v
 
     return tensor
+
+def get_velocity_field_tensor_3d(time_range: Tuple, num_times, bounds, density, model, device) -> Tensor:
+    """
+    :param time_range: (from, to)
+    :param num_times: number of time steps
+    :param bounds: bounding box ((x0, y0, z0), (x1, y1, z1))
+    :param density: sampling density
+    :param model: velocity model
+    :param device: "cpu" or "cuda"
+    :return: [T, D, H, W, 3] tensor
+    """
+    from_time, to_time = time_range
+    time_grid = torch.linspace(from_time, to_time, num_times, device=device)
+
+    bottom_left, top_right = bounds
+
+    W = int(abs(top_right[0] - bottom_left[0]) * density)
+    H = int(abs(top_right[1] - bottom_left[1]) * density)
+    D = int(abs(top_right[2] - bottom_left[2]) * density)
+    C = 3  # 3D vector field components
+    T = len(time_grid)
+
+    # Spatial grid
+    x_coords = torch.linspace(bottom_left[0], top_right[0], W, device=device)
+    y_coords = torch.linspace(bottom_left[1], top_right[1], H, device=device)
+    z_coords = torch.linspace(bottom_left[2], top_right[2], D, device=device)
+
+    zz, yy, xx = torch.meshgrid(z_coords, y_coords, x_coords, indexing='ij')   # D, H, W
+
+    grid = torch.stack([xx, yy, zz], dim=-1)  # [D, H, W, 3]
+
+    tensor = torch.zeros((T, D, H, W, C), device=device)
+
+    model.eval()
+    with torch.no_grad():
+        for t_idx, t_val in enumerate(time_grid):
+            t_tensor = torch.tensor([t_val], device=device)
+            t_broad = t_tensor.view(1, 1, 1, 1)
+            v = model(grid, t_broad)   # returns [D, H, W, 3]
+            tensor[t_idx] = v
+
+    return tensor
+

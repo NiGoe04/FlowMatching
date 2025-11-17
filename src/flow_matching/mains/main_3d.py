@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 import torch
 from flow_matching.path import AffineProbPath
 from flow_matching.path.scheduler import CondOTScheduler
@@ -14,7 +15,7 @@ from src.flow_matching.controller.utils import store_model, load_model_n_dim
 from src.flow_matching.model.coupling import Coupler
 from src.flow_matching.model.losses import ConditionalFMLoss
 from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
-from src.flow_matching.view.utils import plot_tensor_3d, visualize_multi_slider_ndim
+from src.flow_matching.view.utils import plot_tensor_3d, visualize_multi_slider_ndim, visualize_velocity_field_3d
 
 # steering console
 NAME = "3D"
@@ -22,7 +23,8 @@ FIND_LR = False
 TRAIN_MODEL = False
 SAVE_MODEL = False
 GENERATE_SAMPLES = False
-VISUALIZE_TIME = True
+VISUALIZE_TIME = False
+VISUALIZE_FIELD = True
 
 DIM = 3
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -37,6 +39,8 @@ PARAMS = {
     "solver_steps": 100,
     "num_times_to_visualize": 150,
     "t_end": 1.0,
+    "field_density": 0.25,
+    "field_bound": (np.array([-12, -4, -12]), np.array([12, 24, 12])),
     "solver_method": 'midpoint'
 }
 
@@ -89,3 +93,9 @@ if VISUALIZE_TIME:
                                 step_size=1.0 / PARAMS["solver_steps"],
                                 return_intermediates=True, time_grid=time_grid)
     visualize_multi_slider_ndim(x_1_samples, time_grid)
+
+if VISUALIZE_FIELD:
+    model = load_model_n_dim(DIM, model_path, device=DEVICE)
+    time_range = (0.0, PARAMS["t_end"])
+    visualize_velocity_field_3d(time_range, PARAMS["num_times_to_visualize"], PARAMS["field_bound"],
+                                PARAMS["field_density"], model, DEVICE)
