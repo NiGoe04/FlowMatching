@@ -14,4 +14,4 @@ PARAMS = {
     "solver_method": 'midpoint'
 }
 
-noise_bound_target = 0.075
+noise_bound_target = 0.1

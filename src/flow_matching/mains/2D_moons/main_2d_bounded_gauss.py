@@ -63,7 +63,7 @@ model = SimpleVelocityModel(device=DEVICE)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
 trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], device=DEVICE)
-model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_bounded_gauss_2025-11-17_14-30-40.pth")
+model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_bounded_gauss_2025-11-17_15-03-37.pth")
 
 if FIND_LR:
     lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)

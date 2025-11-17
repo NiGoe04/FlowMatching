@@ -22,11 +22,11 @@ from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_
 NAME = "2D_bounded_uni"
 FIND_LR = False
 PLOT_TRAIN_DATA = False
-TRAIN_MODEL = True
-SAVE_MODEL = True
-GENERATE_SAMPLES = False
-VISUALIZE_TIME = False
-VISUALIZE_FIELD = False
+TRAIN_MODEL = False
+SAVE_MODEL = False
+GENERATE_SAMPLES = True
+VISUALIZE_TIME = True
+VISUALIZE_FIELD = True
 
 DIM = 2
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -62,8 +62,7 @@ model = SimpleVelocityModel(device=DEVICE)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
 trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], device=DEVICE)
-model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_bounded_uni_2025-11-17_13-34-01.pth")
-# bounded uniform source dist: model_2D_bounded_uni_2025-11-17_13-34-01.pth, bound_source=2, center=[0.6, 0.3]
+model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_bounded_uni_2025-11-17_15-06-41.pth")
 
 if FIND_LR:
     lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)

@@ -23,8 +23,8 @@ FIND_LR = False
 PLOT_TRAIN_DATA = False
 TRAIN_MODEL = False
 SAVE_MODEL = False
-GENERATE_SAMPLES = False
-VISUALIZE_TIME = False
+GENERATE_SAMPLES = True
+VISUALIZE_TIME = True
 VISUALIZE_FIELD = True
 
 DIM = 2
@@ -52,7 +52,7 @@ model = SimpleVelocityModel(device=DEVICE)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
 trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], device=DEVICE)
-model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_2025-11-09_14-28-07.pth")
+model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_2025-11-17_15-09-13.pth")
 
 if FIND_LR:
     lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)
@@ -74,7 +74,7 @@ if GENERATE_SAMPLES:
     x_1_sample = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"],
                                step_size=1.0 / PARAMS["solver_steps"],
                                time_grid=torch.Tensor([0.0, PARAMS["t_end"]]))
-    plot_tensor_2d(x_1_sample, params=PARAMS)
+    plot_tensor_2d(x_1_sample, params=None)
 
 if VISUALIZE_TIME:
     model = load_model_n_dim(DIM, model_path, device=DEVICE)
