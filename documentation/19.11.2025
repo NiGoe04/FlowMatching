@@ -1,4 +1,9 @@
-
+empirical observations:
+- Bounded sets seem to work slightly better
+- TO DO: Do all distributions work?
+- If the variance is too huge, too tiny -> vector field collapses
+    - Hypothesis: "The distributions match well when their support covers the same region with similar scale."
+    -> This idea is intuitive for 2D point distributions, but how is it for e.g. pictures (MNIST!), calculate per pixel standard variance?
 
 
 

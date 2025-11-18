@@ -7,7 +7,7 @@ PARAMS = {
     "size_train_set": 200000, # leave as is
     "amount_samples": 1000,
     "solver_steps": 100,
-    "num_times_to_visualize": 150,
+    "num_times_to_visualize": 200,
     "t_end": 1.0,
     "field_density": 5,
     "field_bound": (np.array([-3, -3]), np.array([3, 3])),
