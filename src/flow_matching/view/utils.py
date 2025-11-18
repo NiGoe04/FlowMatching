@@ -115,16 +115,19 @@ def visualize_mnist_samples(tensor: torch.Tensor, n_samples: int = 16, title: st
     plt.tight_layout()
     plt.show()
 
-
 def visualize_multi_slider_ndim(tensors: Sequence[torch.Tensor],
-                                time_grid: torch.Tensor):
+                                time_grid: torch.Tensor,
+                                bounds: Optional[Sequence[float]] = None):
     """
     Visualize n-dimensional ODE solutions with a slider over time.
     Supports 2D or 3D data (D=2 or D=3).
 
     Args:
         tensors (Sequence[torch.Tensor]): List of tensors, each shape [N, D].
-        time_grid (torch.Tensor): Tensor of times, shape [len(ode_solutions)].
+        time_grid (torch.Tensor): Times corresponding to each tensor.
+        bounds (list or tuple, optional):
+            2D: [xmin, xmax, ymin, ymax]
+            3D: [xmin, xmax, ymin, ymax, zmin, zmax]
     """
     assert len(tensors) == len(time_grid), "Number of solutions must match number of times."
 
@@ -136,29 +139,54 @@ def visualize_multi_slider_ndim(tensors: Sequence[torch.Tensor],
     if D not in [2, 3]:
         raise ValueError("Only 2D or 3D data is supported for visualization.")
 
+    # Validate bounds
+    if bounds is not None:
+        if D == 2 and len(bounds) != 4:
+            raise ValueError("2D bounds must be [xmin, xmax, ymin, ymax].")
+        if D == 3 and len(bounds) != 6:
+            raise ValueError("3D bounds must be [xmin, xmax, ymin, ymax, zmin, zmax].")
+
     # Move to CPU for plotting
     tensors = [tensor.cpu() for tensor in tensors]
 
     # Initial plot
     fig = plt.figure(figsize=(6, 6))
+
     if D == 3:
         ax = fig.add_subplot(111, projection='3d')
-        all_points = torch.cat(tensors, dim=0)
-        ax.set_xlim(all_points[:, 0].min(), all_points[:, 0].max())
-        ax.set_ylim(all_points[:, 1].min(), all_points[:, 1].max())
-        ax.set_zlim(all_points[:, 2].min(), all_points[:, 2].max())
         scatter = ax.scatter(*tensors[0].T)
-    else:
+
+        # Set frozen axes
+        if bounds is not None:
+            ax.set_xlim(bounds[0], bounds[1])
+            ax.set_ylim(bounds[2], bounds[3])
+            ax.set_zlim(bounds[4], bounds[5])
+        else:
+            all_points = torch.cat(tensors, dim=0)
+            ax.set_xlim(all_points[:, 0].min(), all_points[:, 0].max())
+            ax.set_ylim(all_points[:, 1].min(), all_points[:, 1].max())
+            ax.set_zlim(all_points[:, 2].min(), all_points[:, 2].max())
+
+    else:  # 2D
         ax = fig.add_subplot(111)
         scatter = ax.scatter(*tensors[0].T)
+
+        if bounds is not None:
+            ax.set_xlim(bounds[0], bounds[1])
+            ax.set_ylim(bounds[2], bounds[3])
+        else:
+            all_points = torch.cat(tensors, dim=0)
+            ax.set_xlim(all_points[:, 0].min(), all_points[:, 0].max())
+            ax.set_ylim(all_points[:, 1].min(), all_points[:, 1].max())
 
     ax.set_title(f"t = {time_grid[0].item():.3f}")
 
     # Slider
     ax_slider = plt.axes(pos_slider)
-    slider = Slider(ax_slider, 't', float(time_grid.min()), float(time_grid.max()), valinit=float(time_grid[0]))
+    slider = Slider(ax_slider, 't', float(time_grid.min()), float(time_grid.max()),
+                    valinit=float(time_grid[0]))
 
-    # noinspection PyUnusedLocal
+    # Update callback
     def update(val):
         nonlocal scatter
         idx = (torch.abs(time_grid - slider.val)).argmin().item()
@@ -166,21 +194,28 @@ def visualize_multi_slider_ndim(tensors: Sequence[torch.Tensor],
 
         if D == 2:
             scatter.set_offsets(points)
-        else:  # 3D: need to clear and redraw
-            xlim = ax.get_xlim()
-            ylim = ax.get_ylim()
-            zlim = ax.get_zlim()
+        else:
+            # For 3D: clear and redraw, but reapply bounds (frozen axes)
             ax.cla()
             scatter = ax.scatter(*points.T)
-            ax.set_xlim(xlim)
-            ax.set_ylim(ylim)
-            ax.set_zlim(zlim)
+
+            if bounds is not None:
+                ax.set_xlim(bounds[0], bounds[1])
+                ax.set_ylim(bounds[2], bounds[3])
+                ax.set_zlim(bounds[4], bounds[5])
+            else:
+                # Reapply automatically computed limits
+                all_points = torch.cat(tensors, dim=0)
+                ax.set_xlim(all_points[:, 0].min(), all_points[:, 0].max())
+                ax.set_ylim(all_points[:, 1].min(), all_points[:, 1].max())
+                ax.set_zlim(all_points[:, 2].min(), all_points[:, 2].max())
 
         ax.set_title(f"t = {time_grid[idx].item():.3f}")
         fig.canvas.draw_idle()
 
     slider.on_changed(update)
     plt.show()
+
 
 
 def visualize_multi_slider_mnist(tensors: Sequence[torch.Tensor],
