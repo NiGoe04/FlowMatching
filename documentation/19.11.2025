@@ -1,12 +1,27 @@
 empirical observations:
 - Bounded sets seem to work slightly better
-- TO DO: Do all distributions work?
+
+EXTREME VARIANCE:
 - If the variance is too huge, too tiny -> vector field collapses
-    - Hypothesis: "The distributions match well when their support covers the same region with similar scale."
-    -> This idea is intuitive for 2D point distributions, but how is it for e.g. pictures (MNIST!), calculate per pixel standard variance?
+- Hypothesis: "The distributions match well when their support covers the same region with similar scale."
+-> This idea is intuitive for 2D point distributions, but how is it for e.g. pictures (MNIST!), calculate per pixel standard variance?
+- Paper support:
+    - Theorem 1: If u is locally Lipschitz (NN usually is as its smooth), ODE has a unique solution
+    - To integrate between 0 and 1, this might not suffice 0 -> e.g. global lipschitzness required
+    (- when extrapolating t=1.2, points merge into 1 -> ODE solver solution non-unique)
 
 
+DO ALL DISTRIBUTIONS WORK?:
+- Hints from the paper:
+    - Flow must be a diffeomorphism, is induced by a vector field
 
+OTHER ASPECTS FROM THE PAPER:
+- X_t has bounded expected norm if X_0 does (concept of integrability)
+    - Gaussian has bounded expected norm
+    -> Optimizer can properly converge when approximating the velocity field, stable gradients
 
-random notes:
-- bounded gauss model does not benefit as much from more epochs during training
+- Learning with conditional FM Loss
+    - FM loss is not tractable as calculating u_t(x) requires density of q
+    - By theorem 4, the gradients of the CFM loss and the FM loss coincide, hence we can use tractable CFM loss for training
+    - see also Corollary 1 (p. 23)
+
