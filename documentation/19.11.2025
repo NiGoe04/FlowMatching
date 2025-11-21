@@ -10,3 +10,23 @@ empirical observations:
 
 random notes:
 - bounded gauss model does not benefit as much from more epochs during training
+
+RES:
+- experiment linspace an ts samplen im Training
+- experiment t batch samplen PRO epoch
+- experiment loss dxt = xt - x0
+
+Herr Ochs hätte gerne:
+- prior gauss + endverteilung nur ein Punkt
+- vektorfeld nicht parametrisch in t
+
+Roadmap theoretical FM
+- von flow modeling choices bis hin zum training / implementation
+- interaktion flow vs prob path vs field
+- marginal vs conditional path
+- siehe blog flow matching (ICML flowmatching)
+- frage wahl vs was muss man (natur vom flowmatching) inkludieren
+
+Nächste Termine:
+- paul nächste woche mittwoch
+- alle in 2 wochen mittwoh
