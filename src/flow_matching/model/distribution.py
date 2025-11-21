@@ -30,6 +30,17 @@ class Distribution:
         self.tensor += bounded_noise
         return self
 
+    def shifted_by(self, shift_vector):
+        shift_tensor = torch.tensor(shift_vector, dtype=self.tensor.dtype, device=self.tensor.device)
+        self.tensor += shift_tensor
+        return self
+
+    def merge(self, other: 'Distribution'):
+        if not isinstance(other, Distribution):
+            raise ValueError("Can only merge with another Distribution object.")
+        self.tensor = torch.cat([self.tensor, other.tensor], dim=0)
+        return self
+
     @staticmethod
     def get_uni_distribution(center, n_samples, device):
         center_tensor = torch.tensor(center, dtype=torch.float32)
