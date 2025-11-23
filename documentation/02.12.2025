@@ -1,0 +1,9 @@
+Notes Roadmap theoretical FM:
+
+Flow models:
+    - Continuous Time Markov Process (CTMP): continous model + markov assumption
+    - Flows are the simplest forms of CTMPS, we focus on them
+    - flows can transform any source distribution p into any target distribution q, as long as these two have densities
+    - ODEs for flows can be solved more efficiently than SDEs for diffusion processes
+    - flow model X_t = f(X_0) defined by diffeomorphism f
+    - CDiffeomorphism f: invertable, and f

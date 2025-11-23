@@ -23,9 +23,9 @@ Herr Ochs hätte gerne:
 Roadmap theoretical FM
 - von flow modeling choices bis hin zum training / implementation
 - interaktion flow vs prob path vs field
-- marginal vs conditional path
-- siehe blog flow matching (ICML flowmatching)
+    - inkl. marginal vs conditional path
 - frage wahl vs was muss man (natur vom flowmatching) inkludieren
+- siehe blog flow matching (ICML flowmatching)
 
 Nächste Termine:
 - paul nächste woche mittwoch
