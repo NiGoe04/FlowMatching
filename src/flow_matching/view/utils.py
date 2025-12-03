@@ -294,7 +294,7 @@ def _visualize_velocity_field_2d(time_range: Tuple, num_times, bounds, field_ten
     pos_slider = (0.25, 0.1, 0.5, 0.03)
 
     from_time, to_time = time_range
-    bottom_left, top_right = bounds
+    bottom_left, top_right = (bounds[0], bounds[2]), (bounds[1], bounds[3])
     H, W = field_tensor.shape[1], field_tensor.shape[2]
 
     # Create coordinate grid

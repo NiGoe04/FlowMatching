@@ -129,7 +129,7 @@ def get_velocity_field_tensor_2d(time_range: Tuple, num_times, bounds, density, 
     """
     from_time, to_time = time_range
     time_grid = torch.linspace(from_time, to_time, num_times, device=device)
-    bottom_left, top_right = bounds
+    bottom_left, top_right = (bounds[0], bounds[2]), (bounds[1], bounds[3])
     H = int(abs(top_right[1] - bottom_left[1]) * density)
     W = int(abs(top_right[0] - bottom_left[0]) * density)
     D = len(bottom_left)

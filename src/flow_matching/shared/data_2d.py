@@ -1,5 +1,3 @@
-import numpy as np
-
 PARAMS = {
     "num_epochs": 10,         # leave as is
     "batch_size": 256,        # leave as is
@@ -10,7 +8,7 @@ PARAMS = {
     "num_times_to_visualize": 200,
     "t_end": 1.0,
     "field_density": 5,
-    "field_bound": (np.array([-3, -3]), np.array([3, 3])),
+    "field_bound": [-3, 3, -3, 3],
     "solver_method": 'midpoint'
 }
 
