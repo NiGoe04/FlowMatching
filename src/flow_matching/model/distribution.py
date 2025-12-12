@@ -6,13 +6,13 @@ class Distribution:
         super().__init__()
         self.tensor = base_distribution.to(device)
 
-    def with_2d_uniform_noise(self, noise_bound=0.05):
+    def with_uniform_noise(self, noise_bound=0.05):
         # uniform noise in [-noise_bound, +noise_bound]
         uniform_noise = (torch.rand_like(self.tensor) * 2 - 1) * noise_bound
         self.tensor += uniform_noise
         return self
 
-    def with_2d_gaussian_noise(self, variance=0.05):
+    def with_gaussian_noise(self, variance=0.05):
         # Gaussian noise with mean 0 and specified variance
         std = variance ** 0.5
         gaussian_noise = torch.randn_like(self.tensor) * std
@@ -51,3 +51,25 @@ class Distribution2D(Distribution):
     def __init__(self, base_distribution: Tensor, device):
         super().__init__(base_distribution, device)
         assert base_distribution.ndim == 2 and base_distribution.shape[1] == 2
+
+    def with_uniform_noise_x(self, noise_bound=0.05):
+        noise = (torch.rand(self.tensor.shape[0], 1, device=self.tensor.device) * 2 - 1) * noise_bound
+        self.tensor[:, 0:1] += noise
+        return self
+
+    def with_uniform_noise_y(self, noise_bound=0.05):
+        noise = (torch.rand(self.tensor.shape[0], 1, device=self.tensor.device) * 2 - 1) * noise_bound
+        self.tensor[:, 1:2] += noise
+        return self
+
+    def with_gaussian_noise_x(self, variance=0.05):
+        std = variance ** 0.5
+        noise = torch.randn(self.tensor.shape[0], 1, device=self.tensor.device) * std
+        self.tensor[:, 0:1] += noise
+        return self
+
+    def with_gaussian_noise_y(self, variance=0.05):
+        std = variance ** 0.5
+        noise = torch.randn(self.tensor.shape[0], 1, device=self.tensor.device) * std
+        self.tensor[:, 1:2] += noise
+        return self

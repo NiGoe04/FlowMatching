@@ -41,7 +41,7 @@ x_0_train = (Distribution.get_uni_distribution(x_0_dist_center, PARAMS["size_tra
              .with_bounded_gaussian_noise(variance_source, noise_bound_source)).tensor
 
 x_1_train = (Distribution(Tensor(make_moons(PARAMS["size_train_set"], noise=0.00)[0]), device=DEVICE)
-             .with_2d_uniform_noise(noise_bound_target)).tensor
+             .with_uniform_noise(noise_bound_target)).tensor
 
 x_0_sample = (Distribution.get_uni_distribution(x_0_dist_center, PARAMS["amount_samples"], device=DEVICE)
               .with_bounded_gaussian_noise(variance_source, noise_bound_source)).tensor
