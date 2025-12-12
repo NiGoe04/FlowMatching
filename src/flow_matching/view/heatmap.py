@@ -11,7 +11,7 @@ def visualize_heatmap_tuple_cond_2d(source_dist: Distribution2D,
                                     cmap="plasma",
                                     show_colorbar=True,
                                     figsize=(8, 8),
-                                    title="Probability path approximated via heatmap"):
+                                    title="Approximated probability path as heatmap"):
     # call heatmap function
     heatmap, mins, maxs = heatmap_tuple_cond_2d(
         source_dist,
