@@ -37,13 +37,13 @@ noise_bound_source = 2
 
 x_0_dist_center = [0.6, 0.3]
 x_0_train = (Distribution.get_uni_distribution(x_0_dist_center, PARAMS["size_train_set"], device=DEVICE)
-             .with_uniform_noise(noise_bound_source)).tensor
+             .with_2d_uniform_noise(noise_bound_source)).tensor
 
 x_1_train = (Distribution(Tensor(make_moons(PARAMS["size_train_set"], noise=0.00)[0]), device=DEVICE)
-             .with_uniform_noise(noise_bound_target)).tensor
+             .with_2d_uniform_noise(noise_bound_target)).tensor
 
 x_0_sample = (Distribution.get_uni_distribution(x_0_dist_center, PARAMS["amount_samples"], device=DEVICE)
-              .with_uniform_noise(noise_bound_source)).tensor
+              .with_2d_uniform_noise(noise_bound_source)).tensor
 
 if PLOT_TRAIN_DATA:
     plot_tensor_2d(x_0_train)

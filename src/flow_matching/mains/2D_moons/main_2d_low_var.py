@@ -38,12 +38,12 @@ variance_source = 0.0001
 
 x_0_dist_center = [0.6, 0.3]
 x_0_train = (Distribution.get_uni_distribution(x_0_dist_center, PARAMS["size_train_set"], device=DEVICE)
-             .with_gaussian_noise(variance=variance_source)).tensor
+             .with_2d_gaussian_noise(variance=variance_source)).tensor
 
 x_1_train = Tensor(make_moons(PARAMS["size_train_set"], noise=0.05)[0]).to(DEVICE)
 
 x_0_sample = (Distribution.get_uni_distribution(x_0_dist_center, PARAMS["amount_samples"], device=DEVICE)
-              .with_gaussian_noise(variance=variance_source)).tensor
+              .with_2d_gaussian_noise(variance=variance_source)).tensor
 
 if PLOT_TRAIN_DATA:
     plot_tensor_2d(x_0_train)

@@ -39,16 +39,16 @@ x_0_dist_center = [0.0, 0.0]
 x_1_dist_center = [3, 0.0]
 
 x_0_dist = (Distribution.get_uni_distribution(x_0_dist_center, PARAMS["size_train_set"], device=DEVICE)
-            .with_gaussian_noise(variance=variance_source))
+            .with_2d_gaussian_noise(variance=variance_source))
 
 x_1_dist = (Distribution.get_uni_distribution(x_1_dist_center, PARAMS["size_train_set"], device=DEVICE)
-             .with_gaussian_noise(variance=variance_target))
+            .with_2d_gaussian_noise(variance=variance_target))
 
 x_0_train = x_0_dist.tensor
 x_1_train = x_1_dist.tensor
 
 x_0_sample = (Distribution.get_uni_distribution(x_0_dist_center, PARAMS["amount_samples"], device=DEVICE)
-              .with_gaussian_noise(variance=variance_source)).tensor
+              .with_2d_gaussian_noise(variance=variance_source)).tensor
 
 if PLOT_TRAIN_DATA:
     plot_tensor_2d(x_0_train)
