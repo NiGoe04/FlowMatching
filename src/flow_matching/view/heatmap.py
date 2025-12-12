@@ -32,7 +32,7 @@ def visualize_heatmap_tuple_cond_2d(source_dist: Distribution2D,
     plt.title(title)
 
     if show_colorbar:
-        plt.colorbar(label="Measure of Overlap")
+        plt.colorbar(label="Measure of overlap")
 
     plt.xlabel("x")
     plt.ylabel("y")
