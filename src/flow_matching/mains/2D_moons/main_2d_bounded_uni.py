@@ -36,13 +36,13 @@ MODEL_SAVE_PATH = "../../../../models"
 noise_bound_source = 2
 
 x_0_dist_center = [0.6, 0.3]
-x_0_train = (Distribution.get_uni_distribution(x_0_dist_center, PARAMS["size_train_set"], device=DEVICE)
+x_0_train = (Distribution(x_0_dist_center, PARAMS["size_train_set"], device=DEVICE)
              .with_uniform_noise(noise_bound_source)).tensor
 
-x_1_train = (Distribution(Tensor(make_moons(PARAMS["size_train_set"], noise=0.00)[0]), device=DEVICE)
+x_1_train = (Distribution.get_any(DEVICE).set_to(Tensor(make_moons(PARAMS["size_train_set"], noise=0.00)[0]))
              .with_uniform_noise(noise_bound_target)).tensor
 
-x_0_sample = (Distribution.get_uni_distribution(x_0_dist_center, PARAMS["amount_samples"], device=DEVICE)
+x_0_sample = (Distribution(x_0_dist_center, PARAMS["amount_samples"], device=DEVICE)
               .with_uniform_noise(noise_bound_source)).tensor
 
 if PLOT_TRAIN_DATA:

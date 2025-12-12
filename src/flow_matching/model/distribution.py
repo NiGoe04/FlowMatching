@@ -1,10 +1,22 @@
 import torch
-from torch import Tensor
+
+GENERIC_CENTER = [1, 1]
+GENERIC_SAMPLES = 1
 
 class Distribution:
-    def __init__(self, base_distribution: Tensor, device):
+    def __init__(self, center, n_samples, device):
         super().__init__()
-        self.tensor = base_distribution.to(device)
+        center_tensor = torch.tensor(center, dtype=torch.float32)
+        self.device = device
+        self.tensor = center_tensor.unsqueeze(0).repeat(n_samples, 1).to(device)
+
+    @classmethod
+    def get_any(cls, device):
+        return cls(GENERIC_CENTER, GENERIC_SAMPLES, device)
+
+    def set_to(self, distribution_tensor):
+        self.tensor = distribution_tensor.to(self.device)
+        return self
 
     def with_uniform_noise(self, noise_bound=0.05):
         # uniform noise in [-noise_bound, +noise_bound]
@@ -41,16 +53,10 @@ class Distribution:
         self.tensor = torch.cat([self.tensor, other.tensor], dim=0)
         return self
 
-    @staticmethod
-    def get_uni_distribution(center, n_samples, device):
-        center_tensor = torch.tensor(center, dtype=torch.float32)
-        tensor = center_tensor.unsqueeze(0).repeat(n_samples, 1)
-        return Distribution(tensor, device)
-
 class Distribution2D(Distribution):
-    def __init__(self, base_distribution: Tensor, device):
-        super().__init__(base_distribution, device)
-        assert base_distribution.ndim == 2 and base_distribution.shape[1] == 2
+    def __init__(self, center, n_samples, device):
+        super().__init__(center, n_samples, device)
+        assert len(center) == 2
 
     def with_uniform_noise_x(self, noise_bound=0.05):
         noise = (torch.rand(self.tensor.shape[0], 1, device=self.tensor.device) * 2 - 1) * noise_bound

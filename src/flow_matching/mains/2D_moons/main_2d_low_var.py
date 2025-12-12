@@ -21,7 +21,7 @@ from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_
 # steering console
 NAME = "2D_low_var"
 FIND_LR = False
-PLOT_TRAIN_DATA = False
+PLOT_TRAIN_DATA = True
 TRAIN_MODEL = False
 SAVE_MODEL = False
 GENERATE_SAMPLES = True
@@ -37,12 +37,12 @@ MODEL_SAVE_PATH = "../../../../models"
 variance_source = 0.0001
 
 x_0_dist_center = [0.6, 0.3]
-x_0_train = (Distribution.get_uni_distribution(x_0_dist_center, PARAMS["size_train_set"], device=DEVICE)
+x_0_train = (Distribution(x_0_dist_center, PARAMS["size_train_set"], device=DEVICE)
              .with_gaussian_noise(variance=variance_source)).tensor
 
 x_1_train = Tensor(make_moons(PARAMS["size_train_set"], noise=0.05)[0]).to(DEVICE)
 
-x_0_sample = (Distribution.get_uni_distribution(x_0_dist_center, PARAMS["amount_samples"], device=DEVICE)
+x_0_sample = (Distribution(x_0_dist_center, PARAMS["amount_samples"], device=DEVICE)
               .with_gaussian_noise(variance=variance_source)).tensor
 
 if PLOT_TRAIN_DATA:

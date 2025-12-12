@@ -21,7 +21,7 @@ from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_
 # steering console
 NAME = "2D_bounded_gauss"
 FIND_LR = False
-PLOT_TRAIN_DATA = False
+PLOT_TRAIN_DATA = True
 TRAIN_MODEL = False
 SAVE_MODEL = False
 GENERATE_SAMPLES = True
@@ -37,13 +37,13 @@ noise_bound_source = 2.8
 variance_source = 0.5
 
 x_0_dist_center = [0.6, 0.3]
-x_0_train = (Distribution.get_uni_distribution(x_0_dist_center, PARAMS["size_train_set"], device=DEVICE)
+x_0_train = (Distribution(x_0_dist_center, PARAMS["size_train_set"], device=DEVICE)
              .with_bounded_gaussian_noise(variance_source, noise_bound_source)).tensor
 
-x_1_train = (Distribution(Tensor(make_moons(PARAMS["size_train_set"], noise=0.00)[0]), device=DEVICE)
+x_1_train = (Distribution.get_any(DEVICE).set_to(Tensor(make_moons(PARAMS["size_train_set"], noise=0.00)[0]))
              .with_uniform_noise(noise_bound_target)).tensor
 
-x_0_sample = (Distribution.get_uni_distribution(x_0_dist_center, PARAMS["amount_samples"], device=DEVICE)
+x_0_sample = (Distribution(x_0_dist_center, PARAMS["amount_samples"], device=DEVICE)
               .with_bounded_gaussian_noise(variance_source, noise_bound_source)).tensor
 
 if PLOT_TRAIN_DATA:
