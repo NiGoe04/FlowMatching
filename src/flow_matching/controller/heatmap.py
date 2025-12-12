@@ -32,47 +32,43 @@ def bresenham(x0, y0, x1, y1):
 
 def heatmap_tuple_cond_2d(source_dist: Distribution2D,
                           target_dist: Distribution2D,
-                          num_iterations,
-                          grid_granularity):
-    # create heatmap grid
+                          num_iterations: int,
+                          resolution: float):
+    # construct map matrix
     all_points = torch.cat([source_dist.tensor, target_dist.tensor], dim=0)
+    mins = all_points.min(dim=0).values  # [x_min, y_min]
+    maxs = all_points.max(dim=0).values  # [x_max, y_max]
 
-    mins = all_points.min(dim=0).values  # shape [2]
-    maxs = all_points.max(dim=0).values  # shape [2]
-
-    padding = grid_granularity
-    mins -= padding
-    maxs += padding
-
-    def coord_to_idx(coord, min_val):
-        return ((coord - min_val) / grid_granularity).round().long()
-
-    width = coord_to_idx(maxs[0], mins[0]).item() + 1
-    height = coord_to_idx(maxs[1], mins[1]).item() + 1
+    width = int(np.ceil((maxs[0] - mins[0]).item() * resolution))
+    height = int(np.ceil((maxs[1] - mins[1]).item() * resolution))
 
     heatmap = np.zeros((height, width), dtype=np.int32)
 
-    # fill heatmap
+    def coord_to_idx(coord, min_val, max_val, num_pixels):
+        return ((coord - min_val) * (num_pixels - 1) / (max_val - min_val)).round().long()
+
+    # fill map matrix
     coupler = Coupler(source_dist.tensor, target_dist.tensor)
 
     for _ in range(num_iterations):
         coupling = coupler.get_independent_coupling()
+        x0, x1 = coupling.x0, coupling.x1
 
-        x0 = coupling.x0
-        x1 = coupling.x1
-
-        x0_idx = coord_to_idx(x0[:, 0], mins[0])
-        y0_idx = coord_to_idx(x0[:, 1], mins[1])
-        x1_idx = coord_to_idx(x1[:, 0], mins[0])
-        y1_idx = coord_to_idx(x1[:, 1], mins[1])
+        x0_idx = coord_to_idx(x0[:, 0], mins[0], maxs[0], width)
+        y0_idx = coord_to_idx(x0[:, 1], mins[1], maxs[1], height)
+        x1_idx = coord_to_idx(x1[:, 0], mins[0], maxs[0], width)
+        y1_idx = coord_to_idx(x1[:, 1], mins[1], maxs[1], height)
 
         for i in range(len(x0_idx)):
             xs0, ys0 = x0_idx[i].item(), y0_idx[i].item()
             xs1, ys1 = x1_idx[i].item(), y1_idx[i].item()
 
             pts = bresenham(xs0, ys0, xs1, ys1)
-            for (px, py) in pts:
+            for px, py in pts:
                 if 0 <= px < width and 0 <= py < height:
                     heatmap[py, px] += 1
 
-    return heatmap
+    return heatmap, mins, maxs
+
+
+

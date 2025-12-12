@@ -7,26 +7,35 @@ from src.flow_matching.model.distribution import Distribution2D
 def visualize_heatmap_tuple_cond_2d(source_dist: Distribution2D,
                                     target_dist: Distribution2D,
                                     num_iterations,
-                                    grid_granularity,
-                                    cmap="hot",
+                                    resolution: float,
+                                    cmap="plasma",
                                     show_colorbar=True,
                                     figsize=(8, 8),
-                                    title="Heatmap of Coupled Lines"):
-    heatmap = heatmap_tuple_cond_2d(
+                                    title="Probability path approximated via heatmap"):
+    # call heatmap function
+    heatmap, mins, maxs = heatmap_tuple_cond_2d(
         source_dist,
         target_dist,
         num_iterations,
-        grid_granularity
+        resolution
     )
+
     plt.figure(figsize=figsize)
-    plt.imshow(heatmap, origin='lower', cmap=cmap, interpolation='nearest')
+    plt.imshow(
+        heatmap,
+        origin='lower',
+        cmap=cmap,
+        interpolation='nearest',
+        extent=(mins[0].item(), maxs[0].item(), mins[1].item(), maxs[1].item()),
+        aspect='auto'  # ensures scaling matches coordinate ranges
+    )
     plt.title(title)
 
     if show_colorbar:
-        plt.colorbar(label="Line overlap count")
+        plt.colorbar(label="Measure of Overlap")
 
-    plt.xlabel("x index")
-    plt.ylabel("y index")
+    plt.xlabel("x")
+    plt.ylabel("y")
 
     plt.tight_layout()
     plt.show()
