@@ -4,6 +4,7 @@ import torch
 from src.flow_matching.model.coupling import Coupler
 from src.flow_matching.model.distribution import Distribution2D
 
+
 def bresenham(x0, y0, x1, y1):
     points = []
 
@@ -30,8 +31,11 @@ def bresenham(x0, y0, x1, y1):
 
     return points
 
+
 def heatmap_tuple_cond_2d(source_dist: Distribution2D,
                           target_dist: Distribution2D,
+                          num_ot_batch_size: int,
+                          ot_cost_fn,
                           num_iterations: int,
                           resolution: float):
     # construct map matrix
@@ -51,7 +55,7 @@ def heatmap_tuple_cond_2d(source_dist: Distribution2D,
     coupler = Coupler(source_dist.tensor, target_dist.tensor)
 
     for _ in range(num_iterations):
-        coupling = coupler.get_independent_coupling()
+        coupling = coupler.get_n_ot_coupling(num_ot_batch_size, ot_cost_fn)
         x0, x1 = coupling.x0, coupling.x1
 
         x0_idx = coord_to_idx(x0[:, 0], mins[0], maxs[0], width)
@@ -69,6 +73,3 @@ def heatmap_tuple_cond_2d(source_dist: Distribution2D,
                     heatmap[py, px] += 1
 
     return heatmap, mins, maxs
-
-
-

@@ -6,6 +6,8 @@ from src.flow_matching.model.distribution import Distribution2D
 
 def visualize_heatmap_tuple_cond_2d(source_dist: Distribution2D,
                                     target_dist: Distribution2D,
+                                    num_ot_batch_size: int,
+                                    ot_cost_fn,
                                     num_iterations,
                                     resolution: float,
                                     cmap="plasma",
@@ -16,6 +18,8 @@ def visualize_heatmap_tuple_cond_2d(source_dist: Distribution2D,
     heatmap, mins, maxs = heatmap_tuple_cond_2d(
         source_dist,
         target_dist,
+        num_ot_batch_size,
+        ot_cost_fn,
         num_iterations,
         resolution
     )
