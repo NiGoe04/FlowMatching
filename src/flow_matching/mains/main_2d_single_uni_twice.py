@@ -17,9 +17,9 @@ from src.flow_matching.shared.data_2d import PARAMS
 from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_ndim, visualize_velocity_field_2d
 
 # steering console
-NAME = "2D_double_gauss"
+NAME = "2D_single_uni_twice"
 FIND_LR = False
-PLOT_TRAIN_DATA = True
+PLOT_TRAIN_DATA = False
 TRAIN_MODEL = False
 SAVE_MODEL = False
 GENERATE_SAMPLES = True
@@ -32,39 +32,24 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MODEL_SAVE_PATH = "../../../models"
 
 # data
-variance_source = 0.1
-variance_target = 0.1
+noise_bound = 1
 
-x_0_dist_center_0 = [-2, -2]
-x_0_dist_center_1 = [-2, 2]
-x_1_dist_center_0 = [2, -2]
-x_1_dist_center_1 = [2, 2]
+x_0_dist_center = [-2, 0]
+x_1_dist_center = [2, 0]
 
-x_0_dist_0 = (Distribution(x_0_dist_center_0, int(PARAMS["size_train_set"] / 2), device=DEVICE)
-              .with_gaussian_noise(variance=variance_source))
+x_0_dist = (Distribution(x_0_dist_center, int(PARAMS["size_train_set"]), device=DEVICE)
+              .with_uniform_noise(noise_bound=noise_bound))
 
-x_0_dist_1 = (Distribution(x_0_dist_center_1, int(PARAMS["size_train_set"] / 2), device=DEVICE)
-              .with_gaussian_noise(variance=variance_source))
-
-x_1_dist_0 = (Distribution(x_1_dist_center_0, int(PARAMS["size_train_set"] / 2), device=DEVICE)
-              .with_gaussian_noise(variance=variance_target))
-
-x_1_dist_1 = (Distribution(x_1_dist_center_1, int(PARAMS["size_train_set"] / 2), device=DEVICE)
-              .with_gaussian_noise(variance=variance_target))
-
-x_0_dist = x_0_dist_0.merge(x_0_dist_1)
-x_1_dist = x_1_dist_0.merge(x_1_dist_1)
+x_1_dist = (Distribution(x_1_dist_center, int(PARAMS["size_train_set"]), device=DEVICE)
+              .with_uniform_noise(noise_bound=noise_bound))
 
 x_0_train = x_0_dist.tensor
 x_1_train = x_1_dist.tensor
 
-x_0_dist_sample_0 = (Distribution(x_0_dist_center_0, int(PARAMS["amount_samples"] / 2), device=DEVICE)
-                     .with_gaussian_noise(variance=variance_source))
+x_0_dist_sample = (Distribution(x_0_dist_center, int(PARAMS["amount_samples"]), device=DEVICE)
+                     .with_uniform_noise(noise_bound=noise_bound))
 
-x_0_dist_sample_1 = (Distribution(x_0_dist_center_1, int(PARAMS["amount_samples"] / 2), device=DEVICE)
-                     .with_gaussian_noise(variance=variance_source))
-
-x_0_sample = x_0_dist_sample_0.merge(x_0_dist_sample_1).tensor
+x_0_sample = x_0_dist_sample.tensor
 
 if PLOT_TRAIN_DATA:
     plot_tensor_2d(x_0_train)
@@ -83,7 +68,7 @@ model = SimpleVelocityModel(device=DEVICE)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
 trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], device=DEVICE)
-model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_double_gauss_2025-12-12_14-10-28.pth")
+model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_single_uni_twice_2025-12-16_15-37-24.pth")
 
 if FIND_LR:
     lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)
