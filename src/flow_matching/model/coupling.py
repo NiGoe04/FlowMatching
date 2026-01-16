@@ -27,6 +27,24 @@ class Coupler:
         x1_shuffled = self.x1[perm]
         return Coupling(self.x0, x1_shuffled)
 
+    def get_multi_cond_coupling(self, n):
+        coupled_x0 = []
+        coupled_x1 = []
+        for _ in range(n):
+            perm = torch.randperm(len(self.x1))
+            x1_shuffled = self.x1[perm]
+            coupled_x0.append(self.x0)
+            coupled_x1.append(x1_shuffled)
+
+        x0_coupled = torch.cat(coupled_x0, dim=0)
+        x1_coupled = torch.cat(coupled_x1, dim=0)
+
+        perm = torch.randperm(len(x1_coupled))
+        x0_coupled = x0_coupled[perm]
+        x1_coupled = x1_coupled[perm]
+
+        return Coupling(x0_coupled, x1_coupled)
+
     def get_n_ot_coupling(self, n, cost_fn):
         N = len(self.x0)
 
