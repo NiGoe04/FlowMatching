@@ -4,7 +4,8 @@ from torch.utils.data import DataLoader
 from flow_matching.path.path_sample import PathSample
 
 from src.flow_matching.controller.smart_logger import SmartLogger
-from src.flow_matching.model.losses import ConditionalFMLoss
+from src.flow_matching.model.losses import ConditionalFMLoss, MACWeightedLoss
+import torch.nn.functional as F
 
 DEVICE_CPU = torch.device("cpu")
 
@@ -71,6 +72,58 @@ class CondTrainer:
         self.model.eval()
         total_loss = 0
         for sample in samples:
-            loss = self.criterion(self.model(sample.x_t, sample.t), sample.dx_t)
+            with torch.no_grad():
+                loss = self.criterion(self.model(sample.x_t, sample.t), sample.dx_t)
             total_loss += loss.item()
         return total_loss / len(samples)
+
+class CondTrainerMAC(CondTrainer):
+    def __init__(self, model, optimizer, path: ProbPath, num_epochs, top_k_percentage, mac_reg_coefficient):
+        super().__init__(model, optimizer, path, num_epochs)
+        self.criterion = MACWeightedLoss(mac_reg_coefficient)
+        self.top_k_percentage = top_k_percentage
+
+    # noinspection PyUnresolvedReferences
+    def _train(self, loader: DataLoader):
+        self.model.train()
+        for batch_id, (x_0, x_1) in enumerate(loader):
+            x_0_train = x_0.to(self.device)
+            x_1_train = x_1.to(self.device)
+            batch_size = x_1.shape[0]
+            threshold = int(self.top_k_percentage * batch_size)
+
+            model_pred_error = self._mac_prediction_error(x_0_train, x_1_train)
+            sorted_idx = torch.argsort(model_pred_error)
+            error_ranks = torch.empty_like(sorted_idx)
+            error_ranks[sorted_idx] = torch.arange(len(sorted_idx))
+
+            t = torch.rand(batch_size, device=self.device)
+            sample: PathSample = self.path.sample(t=t, x_0=x_0_train, x_1=x_1_train)
+            if batch_id % self.monitoring_int == 0:
+                self.logger.add_training_sample(sample)
+            x_t = sample.x_t
+            dx_t = sample.dx_t
+            loss = self.criterion(self.model(x_t, t), dx_t, error_ranks, threshold)
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+        # calculate epoch train loss
+        samples = self.logger.request_training_samples()
+        epoch_train_loss = self._compute_epoch_loss(samples)
+        self.logger.log_epoch_train_loss(epoch_train_loss)
+
+    def _mac_prediction_error(self, x_0, x_1):
+        self.model.eval()
+        with torch.no_grad():
+            pred0 = self.model(x_0, torch.zeros(len(x_0), device=x_0.device))
+            pred1 = self.model(x_1, torch.ones(len(x_1), device=x_1.device))
+
+            target = x_1 - x_0
+
+            err0 = F.mse_loss(pred0, target, reduction="none").mean(dim=1)
+            err1 = F.mse_loss(pred1, target, reduction="none").mean(dim=1)
+
+            pred_error = 0.5 * (err0 + err1)
+
+        self.model.train()
+        return pred_error
