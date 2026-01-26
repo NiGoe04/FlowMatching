@@ -13,7 +13,7 @@ from src.flow_matching.model.coupling import Coupler
 from src.flow_matching.model.distribution import Distribution
 from src.flow_matching.model.losses import ConditionalFMLoss
 from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
-from src.flow_matching.shared.data_2d import PARAMS
+from src.flow_matching.shared.md_2d import PARAMS
 from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_ndim, visualize_velocity_field_2d
 
 # steering console
@@ -29,7 +29,7 @@ VISUALIZE_FIELD = True
 PLOT_BOUNDS = [-2, 4, -3, 3]
 DIM = 2
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-MODEL_SAVE_PATH = "../../../models"
+MODEL_SAVE_PATH = "../../../../models"
 
 # data
 variance_source = 0.1

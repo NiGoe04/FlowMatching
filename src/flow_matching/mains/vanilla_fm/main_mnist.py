@@ -23,7 +23,7 @@ GENERATE_SAMPLES = False
 VISUALIZE_TIME = True
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-MODEL_SAVE_PATH = "../../../models"
+MODEL_SAVE_PATH = "../../../../models"
 
 # hyperparams
 PARAMS = {

@@ -78,9 +78,9 @@ class CondTrainer:
         return total_loss / len(samples)
 
 class CondTrainerMAC(CondTrainer):
-    def __init__(self, model, optimizer, path: ProbPath, num_epochs, top_k_percentage, mac_reg_coefficient):
-        super().__init__(model, optimizer, path, num_epochs)
-        self.criterion = MACWeightedLoss(mac_reg_coefficient)
+    def __init__(self, model, optimizer, path: ProbPath, num_epochs, top_k_percentage, mac_reg_coefficient, device=DEVICE_CPU):
+        super().__init__(model, optimizer, path, num_epochs, device=device)
+        self.criterion_mac = MACWeightedLoss(mac_reg_coefficient)
         self.top_k_percentage = top_k_percentage
 
     # noinspection PyUnresolvedReferences
@@ -94,8 +94,8 @@ class CondTrainerMAC(CondTrainer):
 
             model_pred_error = self._mac_prediction_error(x_0_train, x_1_train)
             sorted_idx = torch.argsort(model_pred_error)
-            error_ranks = torch.empty_like(sorted_idx)
-            error_ranks[sorted_idx] = torch.arange(len(sorted_idx))
+            error_ranks = torch.empty_like(sorted_idx, device=self.device)
+            error_ranks[sorted_idx] = torch.arange(len(sorted_idx), device=self.device)
 
             t = torch.rand(batch_size, device=self.device)
             sample: PathSample = self.path.sample(t=t, x_0=x_0_train, x_1=x_1_train)
@@ -103,7 +103,7 @@ class CondTrainerMAC(CondTrainer):
                 self.logger.add_training_sample(sample)
             x_t = sample.x_t
             dx_t = sample.dx_t
-            loss = self.criterion(self.model(x_t, t), dx_t, error_ranks, threshold)
+            loss = self.criterion_mac(self.model(x_t, t), dx_t, error_ranks, threshold)
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()

@@ -4,47 +4,68 @@ import torch
 from flow_matching.path import AffineProbPath
 from flow_matching.path.scheduler import CondOTScheduler
 from flow_matching.solver import ODESolver
-from sklearn.datasets import make_moons
-from torch import Tensor
 from torch.utils.data import DataLoader
 
-from src.flow_matching.controller.cond_trainer import CondTrainer
+from src.flow_matching.controller.cond_trainer import CondTrainer, CondTrainerMAC
 from src.flow_matching.controller.lr_finder import LRFinder
 from src.flow_matching.controller.utils import store_model, load_model_n_dim
 from src.flow_matching.model.coupling import Coupler
 from src.flow_matching.model.distribution import Distribution
 from src.flow_matching.model.losses import ConditionalFMLoss
 from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
-from src.flow_matching.shared.md_2d import PARAMS, noise_bound_target
+from src.flow_matching.shared.md_2d import PARAMS
+from src.flow_matching.shared.md_mac import PARAMS_MAC
 from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_ndim, visualize_velocity_field_2d
 
 # steering console
-NAME = "2D_bounded_gauss"
+NAME = "2D_double_gauss_twice_mac"
 FIND_LR = False
-PLOT_TRAIN_DATA = True
-TRAIN_MODEL = False
-SAVE_MODEL = False
+PLOT_TRAIN_DATA = False
+TRAIN_MODEL = True
+SAVE_MODEL = True
 GENERATE_SAMPLES = True
 VISUALIZE_TIME = True
 VISUALIZE_FIELD = True
 
+PLOT_BOUNDS = [-4, 4, -4, 4]
 DIM = 2
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MODEL_SAVE_PATH = "../../../../models"
 
 # data
-noise_bound_source = 2.8
-variance_source = 0.5
+variance_source = 0.1
+variance_target = 0.1
 
-x_0_dist_center = [0.6, 0.3]
-x_0_train = (Distribution(x_0_dist_center, PARAMS["size_train_set"], device=DEVICE)
-             .with_bounded_gaussian_noise(variance_source, noise_bound_source)).tensor
+x_0_dist_center_0 = [-2, -2]
+x_0_dist_center_1 = [-2, 2]
+x_1_dist_center_0 = [2, -2]
+x_1_dist_center_1 = [2, 2]
 
-x_1_train = (Distribution.get_any(DEVICE).set_to(Tensor(make_moons(PARAMS["size_train_set"], noise=0.00)[0]))
-             .with_uniform_noise(noise_bound_target)).tensor
+x_0_dist_0 = (Distribution(x_0_dist_center_0, int(PARAMS["size_train_set"] / 2), device=DEVICE)
+              .with_gaussian_noise(variance=variance_source))
 
-x_0_sample = (Distribution(x_0_dist_center, PARAMS["amount_samples"], device=DEVICE)
-              .with_bounded_gaussian_noise(variance_source, noise_bound_source)).tensor
+x_0_dist_1 = (Distribution(x_0_dist_center_1, int(PARAMS["size_train_set"] / 2), device=DEVICE)
+              .with_gaussian_noise(variance=variance_source))
+
+x_1_dist_0 = (Distribution(x_1_dist_center_0, int(PARAMS["size_train_set"] / 2), device=DEVICE)
+              .with_gaussian_noise(variance=variance_target))
+
+x_1_dist_1 = (Distribution(x_1_dist_center_1, int(PARAMS["size_train_set"] / 2), device=DEVICE)
+              .with_gaussian_noise(variance=variance_target))
+
+x_0_dist = x_0_dist_0.merge(x_0_dist_1)
+x_1_dist = x_1_dist_0.merge(x_1_dist_1)
+
+x_0_train = x_0_dist.tensor
+x_1_train = x_1_dist.tensor
+
+x_0_dist_sample_0 = (Distribution(x_0_dist_center_0, int(PARAMS["amount_samples"] / 2), device=DEVICE)
+                     .with_gaussian_noise(variance=variance_source))
+
+x_0_dist_sample_1 = (Distribution(x_0_dist_center_1, int(PARAMS["amount_samples"] / 2), device=DEVICE)
+                     .with_gaussian_noise(variance=variance_source))
+
+x_0_sample = x_0_dist_sample_0.merge(x_0_dist_sample_1).tensor
 
 if PLOT_TRAIN_DATA:
     plot_tensor_2d(x_0_train)
@@ -62,8 +83,10 @@ loader = DataLoader(
 model = SimpleVelocityModel(device=DEVICE)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
-trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], device=DEVICE)
-model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_bounded_gauss_2025-11-17_15-03-37.pth")
+trainer_warmup = CondTrainer(model, optimizer, path, 1, device=DEVICE)
+trainer_mac = CondTrainerMAC(model, optimizer, path, PARAMS_MAC["num_epochs"],
+                             PARAMS_MAC["top_k_percentage"], PARAMS_MAC["mac_reg_coefficient"], device=DEVICE)
+model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_double_gauss_2025-12-12_14-10-28.pth")
 
 if FIND_LR:
     lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)
@@ -72,7 +95,8 @@ if FIND_LR:
 
 # training
 if TRAIN_MODEL:
-    trainer.training_loop(loader)
+    trainer_warmup.training_loop(loader)
+    trainer_mac.training_loop(loader)
 
 if SAVE_MODEL:
     # noinspection PyRedeclaration
@@ -93,10 +117,10 @@ if VISUALIZE_TIME:
     x_1_samples = solver.sample(x_init=x_0_sample, method=PARAMS["solver_method"],
                                 step_size=1.0 / PARAMS["solver_steps"],
                                 return_intermediates=True, time_grid=time_grid)
-    visualize_multi_slider_ndim(x_1_samples, time_grid)
+    visualize_multi_slider_ndim(x_1_samples, time_grid, bounds=PLOT_BOUNDS)
 
 if VISUALIZE_FIELD:
     model = load_model_n_dim(DIM, model_path, device=DEVICE)
     time_range = (0.0, PARAMS["t_end"])
-    visualize_velocity_field_2d(time_range, PARAMS["num_times_to_visualize"], PARAMS["field_bound"],
+    visualize_velocity_field_2d(time_range, PARAMS["num_times_to_visualize"], PLOT_BOUNDS,
                                 PARAMS["field_density"], model, DEVICE)

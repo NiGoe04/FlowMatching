@@ -15,7 +15,7 @@ from src.flow_matching.model.coupling import Coupler
 from src.flow_matching.model.distribution import Distribution
 from src.flow_matching.model.losses import ConditionalFMLoss
 from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
-from src.flow_matching.shared.data_2d import PARAMS, noise_bound_target
+from src.flow_matching.shared.md_2d import PARAMS, noise_bound_target
 from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_ndim, visualize_velocity_field_2d
 
 # steering console

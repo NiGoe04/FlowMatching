@@ -22,7 +22,7 @@ class MACWeightedLoss(nn.Module):
         super().__init__()
         self.mac_reg_coefficient = mac_reg_coefficient
     def forward(self, pred_velocity, gt_velocity, error_ranks, threshold):
-        loss = F.mse_loss(pred_velocity, gt_velocity, reduction="none")
+        loss = F.mse_loss(pred_velocity, gt_velocity, reduction="none").mean(dim=1)
         # weight the loss
         mask = error_ranks < threshold
         loss[mask] = loss[mask] * (1 + self.mac_reg_coefficient)
