@@ -18,10 +18,10 @@ from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_
 
 # steering console
 NAME = "2D_4_to_2_gauss"
-FIND_LR = True
-PLOT_TRAIN_DATA = True
-TRAIN_MODEL = True
-SAVE_MODEL = True
+FIND_LR = False
+PLOT_TRAIN_DATA = False
+TRAIN_MODEL = False
+SAVE_MODEL = False
 GENERATE_SAMPLES = True
 VISUALIZE_TIME = True
 VISUALIZE_FIELD = True
@@ -102,7 +102,7 @@ model = SimpleVelocityModel(device=DEVICE)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
 trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], device=DEVICE)
-model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_4_to_2_gauss_2026-01-28_10-04-52.pth")
+model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_4_to_2_gauss_2026-01-29_17-31-25.pth")
 
 if FIND_LR:
     lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)
