@@ -48,7 +48,7 @@ x_1_dist_0 = (Distribution(x_1_dist_center_0, int(PARAMS["size_train_set"] / 2),
 x_1_dist_1 = (Distribution(x_1_dist_center_1, int(PARAMS["size_train_set"] / 2), device=DEVICE)
               .with_gaussian_noise(variance=variance_target))
 
-x_1_dist = x_1_dist_0.merge(x_1_dist_1)
+x_1_dist = x_1_dist_0.merged_with(x_1_dist_1)
 
 x_0_train = x_0_dist.tensor
 x_1_train = x_1_dist.tensor

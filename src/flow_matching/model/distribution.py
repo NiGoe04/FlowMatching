@@ -47,7 +47,7 @@ class Distribution:
         self.tensor += shift_tensor
         return self
 
-    def merge(self, other: 'Distribution'):
+    def merged_with(self, other: 'Distribution'):
         if not isinstance(other, Distribution):
             raise ValueError("Can only merge with another Distribution object.")
         self.tensor = torch.cat([self.tensor, other.tensor], dim=0)

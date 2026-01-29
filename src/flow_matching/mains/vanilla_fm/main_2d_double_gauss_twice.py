@@ -18,10 +18,10 @@ from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_
 
 # steering console
 NAME = "2D_double_gauss_twice"
-FIND_LR = False
-PLOT_TRAIN_DATA = True
-TRAIN_MODEL = False
-SAVE_MODEL = False
+FIND_LR =  False
+PLOT_TRAIN_DATA = False
+TRAIN_MODEL =  False
+SAVE_MODEL =  False
 GENERATE_SAMPLES = True
 VISUALIZE_TIME = True
 VISUALIZE_FIELD = True
@@ -52,8 +52,8 @@ x_1_dist_0 = (Distribution(x_1_dist_center_0, int(PARAMS["size_train_set"] / 2),
 x_1_dist_1 = (Distribution(x_1_dist_center_1, int(PARAMS["size_train_set"] / 2), device=DEVICE)
               .with_gaussian_noise(variance=variance_target))
 
-x_0_dist = x_0_dist_0.merge(x_0_dist_1)
-x_1_dist = x_1_dist_0.merge(x_1_dist_1)
+x_0_dist = x_0_dist_0.merged_with(x_0_dist_1)
+x_1_dist = x_1_dist_0.merged_with(x_1_dist_1)
 
 x_0_train = x_0_dist.tensor
 x_1_train = x_1_dist.tensor
@@ -64,7 +64,7 @@ x_0_dist_sample_0 = (Distribution(x_0_dist_center_0, int(PARAMS["amount_samples"
 x_0_dist_sample_1 = (Distribution(x_0_dist_center_1, int(PARAMS["amount_samples"] / 2), device=DEVICE)
                      .with_gaussian_noise(variance=variance_source))
 
-x_0_sample = x_0_dist_sample_0.merge(x_0_dist_sample_1).tensor
+x_0_sample = x_0_dist_sample_0.merged_with(x_0_dist_sample_1).tensor
 
 if PLOT_TRAIN_DATA:
     plot_tensor_2d(x_0_train)
@@ -83,7 +83,7 @@ model = SimpleVelocityModel(device=DEVICE)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
 trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], device=DEVICE)
-model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_double_gauss_2025-12-12_14-10-28.pth")
+model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_double_gauss_twice_2026-01-29_16-26-39.pth")
 
 if FIND_LR:
     lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)
