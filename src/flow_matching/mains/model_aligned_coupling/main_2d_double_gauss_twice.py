@@ -83,8 +83,8 @@ loader = DataLoader(
 model = SimpleVelocityModel(device=DEVICE)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
-trainer_warmup = CondTrainer(model, optimizer, path, 1, device=DEVICE)
-trainer_mac = CondTrainerMAC(model, optimizer, path, PARAMS_MAC["num_epochs"],
+trainer_warmup = CondTrainer(model, optimizer, path, 1, PARAMS["num_trainer_val_samples"], device=DEVICE)
+trainer_mac = CondTrainerMAC(model, optimizer, path, PARAMS_MAC["num_epochs"], PARAMS["num_trainer_val_samples"],
                              PARAMS_MAC["top_k_percentage"], PARAMS_MAC["mac_reg_coefficient"], device=DEVICE)
 model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_double_gauss_twice_mac_2026-01-29_17-12-25.pth")
 

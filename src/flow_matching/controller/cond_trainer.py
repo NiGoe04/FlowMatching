@@ -1,95 +1,113 @@
 import torch
+import statistics
+
 from flow_matching.path import ProbPath
 from torch.utils.data import DataLoader
 from flow_matching.path.path_sample import PathSample
 
-from src.flow_matching.controller.smart_logger import SmartLogger
-from src.flow_matching.model.losses import ConditionalFMLoss, MACWeightedLoss
+from src.flow_matching.view.logger import Logger
+from src.flow_matching.model.coupling import Coupler
+from src.flow_matching.model.losses import ConditionalFMLoss, MACWeightedLoss, TensorCost
 import torch.nn.functional as F
 
 DEVICE_CPU = torch.device("cpu")
 
 class CondTrainer:
-    def __init__(self, model, optimizer, path: ProbPath, num_epochs, device=DEVICE_CPU, verbose=True, monitoring_int=50):
+    def __init__(self, model, optimizer, path: ProbPath, num_epochs, num_val_samples, device=DEVICE_CPU, verbose=True):
         self.model = model.to(device)
         self.path = path
         self.optimizer = optimizer
         self.num_epochs = num_epochs
+        self.num_val_samples = num_val_samples
         self.device = device
         self.criterion = ConditionalFMLoss()
-        self.logger = SmartLogger(verbose=verbose)
-        self.monitoring_int = monitoring_int
+        self.logger = Logger(verbose=verbose)
+        self.train_loss_values = []
+        self.val_x_t = None
+        self.val_t = None
+        self.val_dx_t = None
 
     def training_loop(self, loader: DataLoader):
         num_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         self.logger.log_device_and_params(self.device, num_params)
         self.logger.log_training_start()
+        self._precompute_validation_samples(loader)
         for epoch in range(self.num_epochs):
             self.logger.log_epoch(epoch)
             self._train(loader)
-            self._validate(loader)
+            self._validate()
         self.logger.log_training_end()
 
-    # noinspection PyUnresolvedReferences
     def _train(self, loader: DataLoader):
+        self.train_loss_values.clear()
         self.model.train()
-        for batch_id, (x_0, x_1) in enumerate(loader):
+        for x_0, x_1 in loader:
+            batch_size = x_1.shape[0]
             x_0 = x_0.to(self.device)
             x_1 = x_1.to(self.device)
-            batch_size = x_1.shape[0]
+
             t = torch.rand(batch_size, device=self.device)  # Randomize time t ∼ U[0, 1]
             sample: PathSample = self.path.sample(t=t, x_0=x_0, x_1=x_1)
-            if batch_id % self.monitoring_int == 0:
-                self.logger.add_training_sample(sample)
             x_t = sample.x_t
             dx_t = sample.dx_t  # dX_t is ψ˙ t(X0 | X1).
             # If D is the Euclidean distance, the CFM objective corresponds to the mean-squared error
             loss = self.criterion(self.model(x_t, t), dx_t) # Monte Carlo estimate
+            self.train_loss_values.append(loss.item())
+
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
         # calculate epoch train loss
-        samples = self.logger.request_training_samples()
-        epoch_train_loss = self._compute_epoch_loss(samples)
+        epoch_train_loss = statistics.mean(self.train_loss_values)
         self.logger.log_epoch_train_loss(epoch_train_loss)
 
-    # noinspection PyUnresolvedReferences
-    def _validate(self, loader: DataLoader):
-        for batch_id, (x_0, x_1) in enumerate(loader):
+    def _validate(self):
+        self.model.eval()
+        with torch.no_grad():
+            pred = self.model(self.val_x_t, self.val_t)
+            loss = self.criterion(pred, self.val_dx_t)
+        self.logger.log_epoch_validation_loss(loss.item())
+
+    def _precompute_validation_samples(self, loader: DataLoader):
+        x_t_list = []
+        t_list = []
+        dx_t_list = []
+        num_collected = 0
+        for x_0, x_1 in loader:
+            batch_size = x_0.shape[0]
+            if num_collected >= self.num_val_samples:
+                break
+
             x_0 = x_0.to(self.device)
             x_1 = x_1.to(self.device)
-            batch_size = x_1.shape[0]
-            if batch_id % self.monitoring_int == 0: # only validate on limited samples
-                t = torch.rand(batch_size, device=self.device)  # Randomize time t ∼ U[0, 1]
-                sample: PathSample = self.path.sample(t=t, x_0=x_0, x_1=x_1)
-                self.logger.add_validation_sample(sample)
-        # calculate epoch validation loss
-        samples = self.logger.request_validation_samples()
-        epoch_val_loss = self._compute_epoch_loss(samples)
-        self.logger.log_epoch_val_loss(epoch_val_loss)
+            t = torch.rand(batch_size, device=self.device)
+            sample: PathSample = self.path.sample(t=t, x_0=x_0, x_1=x_1)
 
-    def _compute_epoch_loss(self, samples):
-        self.model.eval()
-        total_loss = 0
-        for sample in samples:
-            with torch.no_grad():
-                loss = self.criterion(self.model(sample.x_t, sample.t), sample.dx_t)
-            total_loss += loss.item()
-        return total_loss / len(samples)
+            x_t_list.append(sample.x_t.detach())
+            t_list.append(sample.t.detach())
+            dx_t_list.append(sample.dx_t.detach())
+
+            num_collected += batch_size
+
+        self.val_x_t = torch.cat(x_t_list, dim=0).to(self.device)
+        self.val_t = torch.cat(t_list, dim=0).to(self.device)
+        self.val_dx_t = torch.cat(dx_t_list, dim=0).to(self.device)
 
 class CondTrainerMAC(CondTrainer):
-    def __init__(self, model, optimizer, path: ProbPath, num_epochs, top_k_percentage, mac_reg_coefficient, device=DEVICE_CPU):
-        super().__init__(model, optimizer, path, num_epochs, device=device)
+    def __init__(self, model, optimizer, path: ProbPath, num_epochs, num_val_samples,
+                 top_k_percentage, mac_reg_coefficient, device=DEVICE_CPU):
+        super().__init__(model, optimizer, path, num_epochs, num_val_samples, device=device)
         self.criterion_mac = MACWeightedLoss(mac_reg_coefficient)
         self.top_k_percentage = top_k_percentage
 
     # noinspection PyUnresolvedReferences
     def _train(self, loader: DataLoader):
+        self.train_loss_values.clear()
         self.model.train()
-        for batch_id, (x_0, x_1) in enumerate(loader):
+        for x_0, x_1 in loader:
+            batch_size = x_1.shape[0]
             x_0_train = x_0.to(self.device)
             x_1_train = x_1.to(self.device)
-            batch_size = x_1.shape[0]
             threshold = int(self.top_k_percentage * batch_size)
 
             model_pred_error = self._mac_prediction_error(x_0_train, x_1_train)
@@ -99,17 +117,16 @@ class CondTrainerMAC(CondTrainer):
 
             t = torch.rand(batch_size, device=self.device)
             sample: PathSample = self.path.sample(t=t, x_0=x_0_train, x_1=x_1_train)
-            if batch_id % self.monitoring_int == 0:
-                self.logger.add_training_sample(sample)
             x_t = sample.x_t
             dx_t = sample.dx_t
             loss = self.criterion_mac(self.model(x_t, t), dx_t, error_ranks, threshold)
+            self.train_loss_values.append(loss.item())
+
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
         # calculate epoch train loss
-        samples = self.logger.request_training_samples()
-        epoch_train_loss = self._compute_epoch_loss(samples)
+        epoch_train_loss = statistics.mean(self.train_loss_values)
         self.logger.log_epoch_train_loss(epoch_train_loss)
 
     def _mac_prediction_error(self, x_0, x_1):
@@ -127,3 +144,61 @@ class CondTrainerMAC(CondTrainer):
 
         self.model.train()
         return pred_error
+
+class CondTrainerBatchOT(CondTrainer):
+    def __init__(self, model, optimizer, path: ProbPath, num_epochs, num_val_samples, device=DEVICE_CPU):
+        super().__init__(model, optimizer, path, num_epochs, num_val_samples, device=device)
+        self.ot_cost = TensorCost.quadratic_cost
+
+    def _train(self, loader: DataLoader):
+        self.train_loss_values.clear()
+        self.model.train()
+        for x_0, x_1 in loader:
+            batch_size = x_1.shape[0]
+            coupler_ot = Coupler(x_0, x_1)
+            coupling_ot = coupler_ot.get_n_ot_coupling(batch_size, self.ot_cost)
+            x_0_train = coupling_ot.x0.to(self.device)
+            x_1_train = coupling_ot.x1.to(self.device)
+
+            t = torch.rand(batch_size, device=self.device)  # Randomize time t ∼ U[0, 1]
+            sample: PathSample = self.path.sample(t=t, x_0=x_0_train, x_1=x_1_train)
+            x_t = sample.x_t
+            dx_t = sample.dx_t  # dX_t is ψ˙ t(X0 | X1).
+            # If D is the Euclidean distance, the CFM objective corresponds to the mean-squared error
+            loss = self.criterion(self.model(x_t, t), dx_t)  # Monte Carlo estimate
+            self.train_loss_values.append(loss.item())
+
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+        # calculate epoch train loss
+        epoch_train_loss = statistics.mean(self.train_loss_values)
+        self.logger.log_epoch_train_loss(epoch_train_loss)
+
+    def _precompute_validation_samples(self, loader: DataLoader):
+        x_t_list = []
+        t_list = []
+        dx_t_list = []
+        num_collected = 0
+
+        for x_0, x_1 in loader:
+            if num_collected >= self.num_val_samples:
+                break
+            batch_size = x_0.shape[0]
+            coupler_ot = Coupler(x_0, x_1)
+            coupling_ot = coupler_ot.get_n_ot_coupling(batch_size, self.ot_cost)
+
+            x_0_ot = coupling_ot.x0.to(self.device)
+            x_1_ot = coupling_ot.x1.to(self.device)
+            t = torch.rand(batch_size, device=self.device)
+            sample: PathSample = self.path.sample(t=t, x_0=x_0_ot, x_1=x_1_ot)
+
+            x_t_list.append(sample.x_t.detach())
+            t_list.append(sample.t.detach())
+            dx_t_list.append(sample.dx_t.detach())
+
+            num_collected += batch_size
+
+        self.val_x_t = torch.cat(x_t_list, dim=0).to(self.device)
+        self.val_t = torch.cat(t_list, dim=0).to(self.device)
+        self.val_dx_t = torch.cat(dx_t_list, dim=0).to(self.device)

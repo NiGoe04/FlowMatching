@@ -101,7 +101,7 @@ loader = DataLoader(
 model = SimpleVelocityModel(device=DEVICE)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
-trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], device=DEVICE)
+trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], PARAMS["num_trainer_val_samples"], device=DEVICE)
 model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_4_to_2_gauss_2026-01-29_17-31-25.pth")
 
 if FIND_LR:

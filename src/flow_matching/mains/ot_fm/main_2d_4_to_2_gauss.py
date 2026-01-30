@@ -6,22 +6,22 @@ from flow_matching.path.scheduler import CondOTScheduler
 from flow_matching.solver import ODESolver
 from torch.utils.data import DataLoader
 
-from src.flow_matching.controller.cond_trainer import CondTrainer
+from src.flow_matching.controller.cond_trainer import CondTrainerBatchOT
 from src.flow_matching.controller.lr_finder import LRFinder
 from src.flow_matching.controller.utils import store_model, load_model_n_dim
 from src.flow_matching.model.coupling import Coupler
 from src.flow_matching.model.distribution import Distribution2D
-from src.flow_matching.model.losses import ConditionalFMLoss, TensorCost
+from src.flow_matching.model.losses import ConditionalFMLoss
 from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
 from src.flow_matching.shared.md_2d import PARAMS
 from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_ndim, visualize_velocity_field_2d
 
 # steering console
 NAME = "2D_4_to_2_gauss_ot"
-FIND_LR = True
-PLOT_TRAIN_DATA = True
-TRAIN_MODEL = True
-SAVE_MODEL = True
+FIND_LR = False
+PLOT_TRAIN_DATA = False
+TRAIN_MODEL = False
+SAVE_MODEL = False
 GENERATE_SAMPLES = True
 VISUALIZE_TIME = True
 VISUALIZE_FIELD = True
@@ -90,7 +90,7 @@ if PLOT_TRAIN_DATA:
     plot_tensor_2d(x_1_train)
 
 coupler = Coupler(x_0_train, x_1_train)
-coupling = coupler.get_n_ot_coupling(300, TensorCost.quadratic_cost)
+coupling = coupler.get_independent_coupling()
 loader = DataLoader(
     coupling,
     PARAMS["batch_size"],
@@ -101,8 +101,8 @@ loader = DataLoader(
 model = SimpleVelocityModel(device=DEVICE)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
-trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], device=DEVICE)
-model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_4_to_2_gauss_2026-01-28_10-04-52.pth")
+trainer = CondTrainerBatchOT(model, optimizer, path, PARAMS["num_epochs"], PARAMS["num_trainer_val_samples"],  device=DEVICE)
+model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_4_to_2_gauss_ot_2026-01-30_10-59-01.pth")
 
 if FIND_LR:
     lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)

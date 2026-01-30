@@ -54,7 +54,7 @@ loader = DataLoader(
 model = UnetVelocityModel(dropout_rate=PARAMS["dropout_rate_model"], device=DEVICE)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
-trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], DEVICE)
+trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], PARAMS["num_trainer_val_samples"], device=DEVICE)
 # model_MNIST_F_2025-11-05_16-02-20.pth
 # model_MNIST_N_2025-11-05_21-15-20.pth
 model_path = os.path.join(MODEL_SAVE_PATH, "model_MNIST_F_2025-11-05_16-02-20.pth")

@@ -60,7 +60,7 @@ loader = DataLoader(
 model = SimpleVelocityModel(dim=3, device=DEVICE)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
-trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], device=DEVICE)
+trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], PARAMS["num_trainer_val_samples"], device=DEVICE)
 model_path = os.path.join(MODEL_SAVE_PATH, "model_3D_2025-11-09_14-47-53.pth")
 
 if FIND_LR:
