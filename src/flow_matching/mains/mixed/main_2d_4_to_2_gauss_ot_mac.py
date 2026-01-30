@@ -6,7 +6,7 @@ from flow_matching.path.scheduler import CondOTScheduler
 from flow_matching.solver import ODESolver
 from torch.utils.data import DataLoader
 
-from src.flow_matching.controller.cond_trainer import CondTrainer
+from src.flow_matching.controller.cond_trainer import CondTrainerMAC, CondTrainerBatchOT
 from src.flow_matching.controller.lr_finder import LRFinder
 from src.flow_matching.controller.utils import store_model, load_model_n_dim
 from src.flow_matching.model.coupling import Coupler
@@ -14,14 +14,15 @@ from src.flow_matching.model.distribution import Distribution2D
 from src.flow_matching.model.losses import ConditionalFMLoss
 from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
 from src.flow_matching.shared.md_2d import PARAMS
+from src.flow_matching.shared.md_mac import PARAMS_MAC
 from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_ndim, visualize_velocity_field_2d
 
 # steering console
-NAME = "2D_4_to_2_gauss"
-FIND_LR = False
-PLOT_TRAIN_DATA = False
-TRAIN_MODEL = False
-SAVE_MODEL = False
+NAME = "2D_4_to_2_gauss_ot_mac"
+FIND_LR = True
+PLOT_TRAIN_DATA = True
+TRAIN_MODEL = True
+SAVE_MODEL = True
 GENERATE_SAMPLES = True
 VISUALIZE_TIME = True
 VISUALIZE_FIELD = True
@@ -101,8 +102,10 @@ loader = DataLoader(
 model = SimpleVelocityModel(device=DEVICE)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
-trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], PARAMS["num_trainer_val_samples"], device=DEVICE)
-model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_4_to_2_gauss_2026-01-30_14-00-22.pth")
+trainer_warmup = CondTrainerBatchOT(model, optimizer, path, 1, PARAMS["num_trainer_val_samples"], device=DEVICE)
+trainer_mac = CondTrainerMAC(model, optimizer, path, PARAMS_MAC["num_epochs"], PARAMS["num_trainer_val_samples"],
+                             PARAMS_MAC["top_k_percentage"], PARAMS_MAC["mac_reg_coefficient"], device=DEVICE)
+model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_4_to_2_gauss_mac_2026-01-30_14-07-39.pth")
 
 if FIND_LR:
     lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)
@@ -111,7 +114,8 @@ if FIND_LR:
 
 # training
 if TRAIN_MODEL:
-    trainer.training_loop(loader)
+    trainer_warmup.training_loop(loader)
+    trainer_mac.training_loop(loader)
 
 if SAVE_MODEL:
     # noinspection PyRedeclaration

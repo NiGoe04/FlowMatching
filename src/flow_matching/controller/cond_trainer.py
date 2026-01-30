@@ -100,7 +100,6 @@ class CondTrainerMAC(CondTrainer):
         self.criterion_mac = MACWeightedLoss(mac_reg_coefficient)
         self.top_k_percentage = top_k_percentage
 
-    # noinspection PyUnresolvedReferences
     def _train(self, loader: DataLoader):
         self.train_loss_values.clear()
         self.model.train()
