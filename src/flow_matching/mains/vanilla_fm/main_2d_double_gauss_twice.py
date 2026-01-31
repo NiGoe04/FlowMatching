@@ -18,10 +18,10 @@ from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_
 
 # steering console
 NAME = "2D_double_gauss_twice"
-FIND_LR =  False
-PLOT_TRAIN_DATA = False
-TRAIN_MODEL =  False
-SAVE_MODEL =  False
+FIND_LR =  True
+PLOT_TRAIN_DATA = True
+TRAIN_MODEL =  True
+SAVE_MODEL =  True
 GENERATE_SAMPLES = True
 VISUALIZE_TIME = True
 VISUALIZE_FIELD = True
@@ -75,7 +75,7 @@ coupling = coupler.get_independent_coupling()
 loader = DataLoader(
     coupling,
     PARAMS["batch_size"],
-    shuffle=True,
+    shuffle=False,
 )
 
 # model

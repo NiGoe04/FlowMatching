@@ -23,9 +23,11 @@ class Coupler:
         self.x1 = x1_tensor
 
     def get_independent_coupling(self):
-        perm = torch.randperm(len(self.x1))
-        x1_shuffled = self.x1[perm]
-        return Coupling(self.x0, x1_shuffled)
+        perm0 = torch.randperm(len(self.x0))
+        perm1 = torch.randperm(len(self.x1))
+        x0_shuffled = self.x0[perm0]
+        x1_shuffled = self.x1[perm1]
+        return Coupling(x0_shuffled, x1_shuffled)
 
     def get_multi_cond_coupling(self, n):
         coupled_x0 = []
@@ -48,8 +50,10 @@ class Coupler:
     def get_n_ot_coupling(self, n, cost_fn):
         N = len(self.x0)
 
-        perm = torch.randperm(len(self.x1))
-        x1_shuffled = self.x1[perm]
+        perm0 = torch.randperm(len(self.x0))
+        perm1 = torch.randperm(len(self.x1))
+        x0_shuffled = self.x0[perm0]
+        x1_shuffled = self.x1[perm1]
 
         coupled_x0 = []
         coupled_x1 = []
@@ -57,7 +61,7 @@ class Coupler:
         for start in range(0, N, n):
             end = min(start + n, N)
 
-            x0_block = self.x0[start:end]
+            x0_block = x0_shuffled[start:end]
             x1_block = x1_shuffled[start:end]
 
             # Compute cost matrix (block_size x block_size)

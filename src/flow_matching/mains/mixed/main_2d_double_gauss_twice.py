@@ -19,10 +19,10 @@ from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_
 
 # steering console
 NAME = "2D_double_gauss_twice_ot_mac"
-FIND_LR = True
-PLOT_TRAIN_DATA = True
-TRAIN_MODEL = True
-SAVE_MODEL = True
+FIND_LR = False
+PLOT_TRAIN_DATA = False
+TRAIN_MODEL = False
+SAVE_MODEL = False
 GENERATE_SAMPLES = True
 VISUALIZE_TIME = True
 VISUALIZE_FIELD = True
@@ -86,7 +86,7 @@ optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
 trainer_warmup = CondTrainerBatchOT(model, optimizer, path, 1, PARAMS["num_trainer_val_samples"], device=DEVICE)
 trainer_mac = CondTrainerMAC(model, optimizer, path, PARAMS_MAC["num_epochs"], PARAMS["num_trainer_val_samples"],
                              PARAMS_MAC["top_k_percentage"], PARAMS_MAC["mac_reg_coefficient"], device=DEVICE)
-model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_double_gauss_twice_mac_2026-01-29_17-12-25.pth")
+model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_double_gauss_twice_ot_mac_2026-01-30_14-51-12.pth")
 
 if FIND_LR:
     lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)
