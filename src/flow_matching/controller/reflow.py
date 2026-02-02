@@ -39,7 +39,7 @@ class TrainerReflow:
             current_model = self.trainer.model
             # update instances of the trainer
             new_model = type(current_model)(device=self.device)
-            new_optimizer = torch.optim.Adam(new_model.parameters(),self.learning_rate)
+            new_optimizer = torch.optim.Adam(new_model.parameters(), self.learning_rate)
             self.trainer.model = new_model
             self.trainer.optimizer = new_optimizer
         return current_model

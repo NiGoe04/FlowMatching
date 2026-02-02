@@ -12,14 +12,14 @@ from src.flow_matching.controller.reflow import TrainerReflow
 from src.flow_matching.controller.utils import store_model, load_model_n_dim
 from src.flow_matching.model.coupling import Coupler
 from src.flow_matching.model.distribution import Distribution
-from src.flow_matching.model.losses import ConditionalFMLoss
+from src.flow_matching.model.losses import ConditionalFMLoss, TensorCost
 from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
 from src.flow_matching.shared.md_2d import PARAMS
 from src.flow_matching.shared.md_reflow import PARAMS_REF
 from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_ndim, visualize_velocity_field_2d
 
 # steering console
-NAME = "2D_double_gauss_twice_ref"
+NAME = "2D_double_gauss_twice_ref_ot_var2"
 FIND_LR = False
 PLOT_TRAIN_DATA = False
 TRAIN_MODEL = False
@@ -73,7 +73,7 @@ if PLOT_TRAIN_DATA:
     plot_tensor_2d(x_1_train)
 
 coupler = Coupler(x_0_train, x_1_train)
-coupling = coupler.get_independent_coupling()
+coupling = coupler.get_n_ot_coupling(PARAMS["batch_size"], TensorCost.quadratic_cost)
 dummy_loader = DataLoader(
     coupling,
     PARAMS["batch_size"],
@@ -86,7 +86,7 @@ path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
 trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], PARAMS["num_trainer_val_samples"], device=DEVICE)
 trainer_reflow = TrainerReflow(trainer, coupling, PARAMS["batch_size"], PARAMS["learning_rate"], PARAMS_REF["reflow_order"])
-model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_double_gauss_twice_ref_2026-02-02_16-39-32.pth")
+model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_double_gauss_twice_ref_ot_var2_2026-02-02_16-47-15.pth")
 
 if FIND_LR:
     lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)
