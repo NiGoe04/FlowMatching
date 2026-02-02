@@ -5,7 +5,7 @@ PARAMS = {
     "size_train_set": 200000, # leave as is
     "amount_samples": 1000,
     "num_trainer_val_samples": 5000,
-    "solver_steps": 1,
+    "solver_steps": 128,
     "num_times_to_visualize": 200,
     "t_end": 1.0,
     "field_density": 2,
