@@ -25,6 +25,10 @@ class Logger:
         content = "Finishing training"
         self._create_msg(content)
 
+    def log_reflow_iteration(self, iteration):
+        content = "Reflow iteration: {}".format(iteration)
+        self._create_msg(content)
+
     def log_epoch(self, num_epoch):
         content = "Starting epoch {}".format(num_epoch)
         self._create_msg(content)
@@ -53,4 +57,4 @@ class Logger:
         )
         self.messages.append(msg)
         if self.verbose:
-            print(msg.read())
+            print(content)

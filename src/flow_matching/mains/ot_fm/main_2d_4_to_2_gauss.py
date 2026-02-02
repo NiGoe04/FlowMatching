@@ -18,10 +18,10 @@ from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_
 
 # steering console
 NAME = "2D_4_to_2_gauss_ot"
-FIND_LR = True
-PLOT_TRAIN_DATA = True
-TRAIN_MODEL = True
-SAVE_MODEL = True
+FIND_LR = False
+PLOT_TRAIN_DATA = False
+TRAIN_MODEL = False
+SAVE_MODEL = False
 GENERATE_SAMPLES = True
 VISUALIZE_TIME = True
 VISUALIZE_FIELD = True

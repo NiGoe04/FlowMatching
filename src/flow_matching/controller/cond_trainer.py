@@ -31,7 +31,7 @@ class CondTrainer:
         num_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         self.logger.log_device_and_params(self.device, num_params)
         self.logger.log_training_start()
-        self._precompute_validation_samples(loader)
+        self.precompute_validation_samples(loader)
         for epoch in range(self.num_epochs):
             self.logger.log_epoch(epoch)
             self._train(loader)
@@ -68,7 +68,7 @@ class CondTrainer:
             loss = self.criterion(pred, self.val_dx_t)
         self.logger.log_epoch_validation_loss(loss.item())
 
-    def _precompute_validation_samples(self, loader: DataLoader):
+    def precompute_validation_samples(self, loader: DataLoader):
         x_t_list = []
         t_list = []
         dx_t_list = []
@@ -174,7 +174,7 @@ class CondTrainerBatchOT(CondTrainer):
         epoch_train_loss = statistics.mean(self.train_loss_values)
         self.logger.log_epoch_train_loss(epoch_train_loss)
 
-    def _precompute_validation_samples(self, loader: DataLoader):
+    def precompute_validation_samples(self, loader: DataLoader):
         x_t_list = []
         t_list = []
         dx_t_list = []
