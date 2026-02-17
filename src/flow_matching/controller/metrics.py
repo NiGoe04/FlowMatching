@@ -1,9 +1,10 @@
 import torch
 from flow_matching.solver import ODESolver
-from flow_matching.model.coupling import Coupler
-from flow_matching.model.losses import TensorCost
 
-straightness_simulation_steps = 200
+from src.flow_matching.model.coupling import Coupler
+from src.flow_matching.model.losses import TensorCost
+
+straightness_simulation_steps = 256
 
 
 class Metrics:
