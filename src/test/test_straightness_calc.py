@@ -4,7 +4,6 @@ import torch
 
 from src.flow_matching.controller.utils import load_model_n_dim
 from src.flow_matching.model.distribution import Distribution
-from src.flow_matching.model.losses import TensorCost
 from src.flow_matching.shared.md_2d import PARAMS
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
