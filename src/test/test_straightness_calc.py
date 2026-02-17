@@ -37,8 +37,8 @@ x_0_dist_sample_1 = (Distribution(x_0_dist_center_1, int(PARAMS["amount_samples"
 x_0_sample = x_0_dist_sample_0.merged_with(x_0_dist_sample_1).tensor
 
 straightness_vanilla = Metrics.calculate_path_straightness(model_vanilla, x_0_sample)
-straightness_ot_cfm = Metrics.calculate_path_straightness(model_ot_cfm, x_0_sample)
 straightness_mac = Metrics.calculate_path_straightness(model_mac, x_0_sample)
+straightness_ot_cfm = Metrics.calculate_path_straightness(model_ot_cfm, x_0_sample)
 straightness_ref_ot_cfm = Metrics.calculate_path_straightness(model_ref_ot_cfm, x_0_sample)
 
 print("Vanilla straightness: {}".format(straightness_vanilla))
