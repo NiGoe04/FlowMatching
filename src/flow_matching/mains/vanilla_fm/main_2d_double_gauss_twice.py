@@ -75,7 +75,7 @@ coupling = coupler.get_independent_coupling()
 loader = DataLoader(
     coupling,
     PARAMS["batch_size"],
-    shuffle=False,
+    shuffle=True,
 )
 
 # model
