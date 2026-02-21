@@ -6,7 +6,7 @@ from flow_matching.path.scheduler import CondOTScheduler
 from flow_matching.solver import ODESolver
 from torch.utils.data import DataLoader
 
-from src.flow_matching.controller.cond_trainer import CondTrainer
+from src.flow_matching.controller.cond_trainer import CondTrainerBatchOT
 from src.flow_matching.controller.lr_finder import LRFinder
 from src.flow_matching.controller.utils import store_model, load_model_n_dim
 from src.flow_matching.model.coupling import Coupler
@@ -18,13 +18,13 @@ from src.flow_matching.view.utils import visualize_multi_slider_ndim, visualize_
     plot_tensor_3d
 
 # steering console
-NAME = "3D_double_gauss_twice"
+NAME = "3D_double_gauss_twice_ot"
 FIND_LR = True
 PLOT_TRAIN_DATA = True
 TRAIN_MODEL = True
 SAVE_MODEL = True
-GENERATE_SAMPLES = True
-VISUALIZE_TIME = True
+GENERATE_SAMPLES = False
+VISUALIZE_TIME = False
 VISUALIZE_FIELD = False
 
 PLOT_BOUNDS = [-4, 4, -4, 4, -4, 4]
@@ -83,8 +83,8 @@ loader = DataLoader(
 model = SimpleVelocityModel(device=DEVICE, dim=DIM)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
-trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], PARAMS["num_trainer_val_samples"], device=DEVICE)
-model_path = os.path.join(MODEL_SAVE_PATH, "model_3D_double_gauss_twice_2026-02-18_12-06-53.pth")
+trainer = CondTrainerBatchOT(model, optimizer, path, PARAMS["num_epochs"], PARAMS["num_trainer_val_samples"], device=DEVICE)
+model_path = os.path.join(MODEL_SAVE_PATH, "model_3D_double_gauss_twice_ot_2026-02-18_12-17-37.pth")
 
 if FIND_LR:
     lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)

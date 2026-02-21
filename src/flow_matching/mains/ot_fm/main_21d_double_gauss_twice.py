@@ -6,7 +6,7 @@ from flow_matching.path.scheduler import CondOTScheduler
 from flow_matching.solver import ODESolver
 from torch.utils.data import DataLoader
 
-from src.flow_matching.controller.cond_trainer import CondTrainer
+from src.flow_matching.controller.cond_trainer import CondTrainerBatchOT
 from src.flow_matching.controller.lr_finder import LRFinder
 from src.flow_matching.controller.utils import store_model, load_model_n_dim
 from src.flow_matching.model.coupling import Coupler
@@ -18,17 +18,17 @@ from src.flow_matching.view.utils import visualize_multi_slider_ndim, visualize_
     plot_tensor_3d
 
 # steering console
-NAME = "3D_double_gauss_twice"
+NAME = "21D_double_gauss_twice_ot"
 FIND_LR = True
 PLOT_TRAIN_DATA = True
 TRAIN_MODEL = True
 SAVE_MODEL = True
-GENERATE_SAMPLES = True
-VISUALIZE_TIME = True
+GENERATE_SAMPLES = False
+VISUALIZE_TIME = False
 VISUALIZE_FIELD = False
 
 PLOT_BOUNDS = [-4, 4, -4, 4, -4, 4]
-DIM = 3
+DIM = 21
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MODEL_SAVE_PATH = "../../../../models"
 
@@ -36,10 +36,10 @@ MODEL_SAVE_PATH = "../../../../models"
 variance_source = 0.1
 variance_target = 0.1
 
-x_0_dist_center_0 = [0, -2, -2]
-x_0_dist_center_1 = [0, -2, 2]
-x_1_dist_center_0 = [0, 2, -2]
-x_1_dist_center_1 = [0, 2, 2]
+x_0_dist_center_0 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2, -2]
+x_0_dist_center_1 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2, 2]
+x_1_dist_center_0 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, -2]
+x_1_dist_center_1 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2]
 
 x_0_dist_0 = (Distribution(x_0_dist_center_0, int(PARAMS["size_train_set"] / 2), device=DEVICE)
               .with_gaussian_noise(variance=variance_source))
@@ -67,8 +67,8 @@ x_0_dist_sample_1 = (Distribution(x_0_dist_center_1, int(PARAMS["amount_samples"
 
 x_0_sample = x_0_dist_sample_0.merged_with(x_0_dist_sample_1).tensor
 
-if PLOT_TRAIN_DATA:
-    plot_tensor_3d(x_0_sample)
+#if PLOT_TRAIN_DATA:
+    #plot_tensor_3d(x_0_sample)
     #plot_tensor_3d(x_1_train)
 
 coupler = Coupler(x_0_train, x_1_train)
@@ -83,8 +83,8 @@ loader = DataLoader(
 model = SimpleVelocityModel(device=DEVICE, dim=DIM)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
-trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], PARAMS["num_trainer_val_samples"], device=DEVICE)
-model_path = os.path.join(MODEL_SAVE_PATH, "model_3D_double_gauss_twice_2026-02-18_12-06-53.pth")
+trainer = CondTrainerBatchOT(model, optimizer, path, PARAMS["num_epochs"], PARAMS["num_trainer_val_samples"], device=DEVICE)
+model_path = os.path.join(MODEL_SAVE_PATH, "model_5D_double_gauss_twice_2026-02-18_13-36-49.pth")
 
 if FIND_LR:
     lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)

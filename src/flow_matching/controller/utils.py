@@ -1,3 +1,4 @@
+import math
 import os
 from datetime import datetime
 from typing import Tuple
@@ -198,4 +199,18 @@ def get_velocity_field_tensor_3d(time_range: Tuple, num_times, bounds, density, 
             tensor[t_idx] = v
 
     return tensor
+
+def calculate_normalized_centers_dg_twice(d: int, mode_sep: float = 2.0):
+    assert d >= 2
+    delta = 4.0 / math.sqrt(d - 1)   # per-axis displacement
+    a = delta / 2.0
+
+    base_src = [-a] * (d - 1)
+    base_tgt = [ a] * (d - 1)
+
+    x0_c0 = base_src + [-mode_sep]
+    x0_c1 = base_src + [ mode_sep]
+    x1_c0 = base_tgt + [-mode_sep]
+    x1_c1 = base_tgt + [ mode_sep]
+    return x0_c0, x0_c1, x1_c0, x1_c1
 

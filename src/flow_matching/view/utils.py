@@ -66,6 +66,12 @@ def plot_tensor_3d(points: torch.Tensor, title: str = "3D Scatter Plot", params:
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter(x, y, z, s=10, alpha=0.7)
 
+    # Keep an equal data aspect ratio so isotropic clouds are not visually flattened.
+    x_range = max(float(np.max(x) - np.min(x)), 1e-8)
+    y_range = max(float(np.max(y) - np.min(y)), 1e-8)
+    z_range = max(float(np.max(z) - np.min(z)), 1e-8)
+    ax.set_box_aspect((x_range, y_range, z_range))
+
     ax.set_title(title)
     ax.set_xlabel("x₁")
     ax.set_ylabel("x₂")

@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import torch
 from flow_matching.solver import ODESolver
 
@@ -100,7 +102,7 @@ class Metrics:
         return straightness
 
     @staticmethod
-    def calculate_normalized_path_energy(model, x0: torch.Tensor, x1: torch.Tensor) -> torch.Tensor:
+    def calculate_normalized_path_energy(model, x0: torch.Tensor, x1: torch.Tensor) -> Tuple:
         """
         Computes normalized path energy:
 
@@ -126,4 +128,4 @@ class Metrics:
         if was_training:
             model.train()
 
-        return normalized_path_energy
+        return path_energy, w2_sq, normalized_path_energy
