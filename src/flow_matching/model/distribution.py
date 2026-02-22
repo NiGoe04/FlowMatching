@@ -134,11 +134,7 @@ class GaussianMixtureDistribution:
         permutation = torch.randperm(merged_distribution.tensor.shape[0], device=self.device)
         return merged_distribution.tensor[permutation]
 
-    def nll(self, x1):
-        x1 = torch.as_tensor(x1, dtype=torch.float32, device=self.device)
-        if x1.dim() != 2 or x1.shape[1] != self.d:
-            raise ValueError(f"x1 must have shape [n, {self.d}].")
-
+    def _component_log_probs(self, x1):
         eps = torch.finfo(x1.dtype).eps
         safe_variances = torch.clamp(self.variances, min=eps)
 
@@ -148,8 +144,53 @@ class GaussianMixtureDistribution:
 
         log_det = torch.log(2 * torch.pi * safe_variances).sum(dim=-1)
         component_log_probs = -0.5 * (quadratic + log_det.unsqueeze(0))
+        return component_log_probs
+
+    def nll(self, x1):
+        x1 = torch.as_tensor(x1, dtype=torch.float32, device=self.device)
+        if x1.dim() != 2 or x1.shape[1] != self.d:
+            raise ValueError(f"x1 must have shape [n, {self.d}].")
+
+        component_log_probs = self._component_log_probs(x1)
 
         log_mixture_prob = torch.logsumexp(component_log_probs, dim=1) - torch.log(
             torch.tensor(self.n_components, dtype=x1.dtype, device=self.device)
         )
         return -log_mixture_prob.mean()
+
+    def nll_per_dim(self, x1):
+        return self.nll(x1) / self.d
+
+    def nll_mi_corrected(self, x1):
+        """
+         Mutual-information corrected NLL.
+
+         NLL_corrected = NLL - I(X;Z)
+         where I(X;Z) = log K - H(Z|X)
+         """
+        x1 = torch.as_tensor(x1, dtype=torch.float32, device=self.device)
+        nll = self.nll(x1)
+        component_log_probs = self._component_log_probs(x1)
+
+        log_post = component_log_probs - torch.logsumexp(
+            component_log_probs, dim=1, keepdim=True
+        )
+
+        post = torch.exp(log_post)
+
+        # 3) Conditional entropy H(Z|X)
+        H_Z_given_X = -(post * log_post).sum(dim=1).mean()
+
+        # 4) Mutual information I(X;Z)
+        logK = torch.log(
+            torch.tensor(self.n_components, dtype=x1.dtype, device=self.device)
+        )
+        I_XZ = logK - H_Z_given_X
+
+        # 5) Corrected NLL
+        nll_corrected = nll - I_XZ
+
+        return nll_corrected
+
+    def nll_mi_corrected_per_dim(self, x1):
+        return self.nll_mi_corrected(x1) / self.d
