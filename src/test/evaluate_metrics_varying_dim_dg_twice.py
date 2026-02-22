@@ -163,7 +163,6 @@ for i, d in enumerate(DIMS):
     print(f"vanilla MI-corrected NLL:         {nll_mi_corr_v.item()}")
     print(f"OT-CFM NLL:                       {nll_o.item()}")
     print(f"OT-CFM MI-corrected NLL:          {nll_mi_corr_o.item()}")
-    print()
     print(f"vanilla NLL per dim:              {nll_per_dim_v.item()}")
     print(f"vanilla MI-corrected NLL per dim: {nll_mi_corr_per_dim_v.item()}")
     print(f"OT-CFM NLL per dim:               {nll_per_dim_o.item()}")
