@@ -200,7 +200,7 @@ def get_velocity_field_tensor_3d(time_range: Tuple, num_times, bounds, density, 
 
     return tensor
 
-def calculate_normalized_centers_dg_twice(d: int, mode_sep: float = 2.0):
+def calculate_normalized_centers_ftd_dg_twice(d: int, mode_sep: float = 2.0):
     assert d >= 2
     delta = 4.0 / math.sqrt(d - 1)   # per-axis displacement
     a = delta / 2.0
