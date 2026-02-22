@@ -139,10 +139,15 @@ for i, d in enumerate(DIMS):
     _, psi_1_v = Metrics._calculate_mean_velocity_norm_sq(model_vanilla, x0)
     _, psi_1_o = Metrics._calculate_mean_velocity_norm_sq(model_ot_cfm, x0)
 
+    nll_v = gmm_x1.nll(psi_1_v)
+    nll_mi_corr_v = gmm_x1.nll_mi_corrected(psi_1_v)
+    nll_o = gmm_x1.nll(psi_1_o)
+    nll_mi_corr_o = gmm_x1.nll_mi_corrected(psi_1_o)
+
     nll_per_dim_v = gmm_x1.nll_per_dim(psi_1_v)
     nll_mi_corr_per_dim_v = gmm_x1.nll_mi_corrected_per_dim(psi_1_v)
     nll_per_dim_o = gmm_x1.nll_per_dim(psi_1_o)
-    nll_mi_corr_per_dim_o = gmm_x1.nll_mi_corrected_per_dim(x0)
+    nll_mi_corr_per_dim_o = gmm_x1.nll_mi_corrected_per_dim(psi_1_o)
 
     print(f"========== d = {d} ==========")
     print(f"vanilla straightness:             {straight_v.item()}")
@@ -153,6 +158,11 @@ for i, d in enumerate(DIMS):
     print(f"Est. OT-CFM  W2^2:                {w2_o.item()}")
     print(f"vanilla NPE:                      {npe_v.item()}")
     print(f"OT-CFM  NPE:                      {npe_o.item()}")
+    print()
+    print(f"vanilla NLL:                      {nll_v.item()}")
+    print(f"vanilla MI-corrected NLL:         {nll_mi_corr_v.item()}")
+    print(f"OT-CFM NLL:                       {nll_o.item()}")
+    print(f"OT-CFM MI-corrected NLL:          {nll_mi_corr_o.item()}")
     print()
     print(f"vanilla NLL per dim:              {nll_per_dim_v.item()}")
     print(f"vanilla MI-corrected NLL per dim: {nll_mi_corr_per_dim_v.item()}")
