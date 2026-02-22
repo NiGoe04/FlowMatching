@@ -161,7 +161,7 @@ class GaussianMixtureDistribution:
     def nll_per_dim(self, x1):
         return self.nll(x1) / self.d
 
-    def nll_mi_corrected(self, x1):
+    def nll_mi_corrected(self, x1, return_details=False):
         """
          Mutual-information corrected NLL.
 
@@ -190,7 +190,21 @@ class GaussianMixtureDistribution:
         # 5) Corrected NLL
         nll_corrected = nll - I_XZ
 
+        if return_details:
+            return {
+                "nll": nll,
+                "nll_corrected": nll_corrected,
+                "I_XZ": I_XZ,
+                "H_Z_given_X": H_Z_given_X,
+                "logK": logK,
+            }
         return nll_corrected
 
-    def nll_mi_corrected_per_dim(self, x1):
-        return self.nll_mi_corrected(x1) / self.d
+    def nll_mi_corrected_per_dim(self, x1, return_details: bool = False):
+        out = self.nll_mi_corrected(x1, return_details=return_details)
+        if return_details:
+            out["nll_per_dim"] = out["nll"] / self.d
+            out["nll_corrected_per_dim"] = out["nll_corrected"] / self.d
+            out["I_XZ_per_dim"] = out["I_XZ"] / self.d
+            return out
+        return out / self.d
