@@ -25,8 +25,12 @@ class Distribution:
         return self
 
     def with_gaussian_noise(self, variance=0.05):
-        # Gaussian noise with mean 0 and specified variance
-        std = variance ** 0.5
+        # Gaussian noise with mean 0 and specified variance.
+        # Variance can be scalar, list, or tensor broadcastable to self.tensor.
+        variance_tensor = torch.as_tensor(variance, dtype=self.tensor.dtype, device=self.tensor.device)
+        if torch.any(variance_tensor < 0):
+            raise ValueError("Variance must be non-negative.")
+        std = torch.sqrt(variance_tensor)
         gaussian_noise = torch.randn_like(self.tensor) * std
         self.tensor += gaussian_noise
         return self
@@ -79,3 +83,73 @@ class Distribution2D(Distribution):
         noise = torch.randn(self.tensor.shape[0], 1, device=self.tensor.device) * std
         self.tensor[:, 1:2] += noise
         return self
+
+
+class GaussianMixtureDistribution:
+    def __init__(self, means, variances, device):
+        self.device = device
+        self.means = torch.as_tensor(means, dtype=torch.float32, device=device)
+        if self.means.dim() != 2:
+            raise ValueError("means must have shape [n_components, d].")
+
+        if isinstance(variances, (float, int)):
+            if variances < 0:
+                raise ValueError("Variance must be non-negative.")
+            self.variances = torch.full_like(self.means, float(variances))
+        else:
+            self.variances = torch.as_tensor(variances, dtype=torch.float32, device=device)
+            if self.variances.shape != self.means.shape:
+                raise ValueError("variances must have shape [n_components, d].")
+            if torch.any(self.variances < 0):
+                raise ValueError("Variance must be non-negative.")
+
+        self.n_components, self.d = self.means.shape
+
+    def sample(self, n):
+        counts = torch.multinomial(
+            torch.ones(self.n_components, device=self.device),
+            n,
+            replacement=True,
+        ).bincount(minlength=self.n_components)
+
+        merged_distribution = None
+        for component_idx, component_count in enumerate(counts.tolist()):
+            if component_count == 0:
+                continue
+
+            component_distribution = Distribution(
+                center=self.means[component_idx].tolist(),
+                n_samples=component_count,
+                device=self.device,
+            ).with_gaussian_noise(variance=self.variances[component_idx])
+
+            if merged_distribution is None:
+                merged_distribution = component_distribution
+            else:
+                merged_distribution = merged_distribution.merged_with(component_distribution)
+
+        if merged_distribution is None:
+            return torch.empty((0, self.d), dtype=torch.float32, device=self.device)
+
+        permutation = torch.randperm(merged_distribution.tensor.shape[0], device=self.device)
+        return merged_distribution.tensor[permutation]
+
+    def nll(self, x1):
+        x1 = torch.as_tensor(x1, dtype=torch.float32, device=self.device)
+        if x1.dim() != 2 or x1.shape[1] != self.d:
+            raise ValueError(f"x1 must have shape [n, {self.d}].")
+
+        eps = torch.finfo(x1.dtype).eps
+        safe_variances = torch.clamp(self.variances, min=eps)
+
+        diff = x1.unsqueeze(1) - self.means.unsqueeze(0)
+        scaled_sq = (diff ** 2) / safe_variances.unsqueeze(0)
+        quadratic = scaled_sq.sum(dim=-1)
+
+        log_det = torch.log(2 * torch.pi * safe_variances).sum(dim=-1)
+        component_log_probs = -0.5 * (quadratic + log_det.unsqueeze(0))
+
+        log_mixture_prob = torch.logsumexp(component_log_probs, dim=1) - torch.log(
+            torch.tensor(self.n_components, dtype=x1.dtype, device=self.device)
+        )
+        return -log_mixture_prob.mean()
