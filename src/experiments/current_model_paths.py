@@ -1,15 +1,33 @@
 """Auto-managed registry of trained model paths for mass experiments."""
 
 # key format:
-# "{dim}D|{ot_batch_size}N|{ot_solver_name}|{scenario_name}" for hungarian
-# "{dim}D|{ot_batch_size}N|{ot_solver_name}|eps={epsilon}|{scenario_name}" for sinkhorn
+# "{dim}D|{ot_batch_size}V|{ot_solver_name}|{scenario_name}" for hungarian, vanilla fm mode
+# "{dim}D|{ot_batch_size}V|{ot_solver_name}|eps={epsilon}|{scenario_name}" for sinkhorn, vanilla fm mode
+# "{dim}D|{ot_batch_size}N|{ot_solver_name}|{scenario_name}" for hungarian, batch OT mode
+# "{dim}D|{ot_batch_size}N|{ot_solver_name}|eps={epsilon}|{scenario_name}" for sinkhorn, batch OT mode
 MODEL_PATHS: dict[str, str] = {
+    '128D|128N|hungarian|double_gauss_twice': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_128D_128N_hungarian_double_gauss_twice_2026-02-23_16-35-23.pth',
+    '128D|128N|hungarian|double_gauss_twice_ftd': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_128D_128N_hungarian_double_gauss_twice_ftd_2026-02-23_16-43-10.pth',
+    '128D|128V|hungarian|double_gauss_twice': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_128D_128V_hungarian_double_gauss_twice_2026-02-23_16-34-14.pth',
+    '128D|128V|hungarian|double_gauss_twice_ftd': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_128D_128V_hungarian_double_gauss_twice_ftd_2026-02-23_16-42-00.pth',
     '233D|256N|hungarian|double_gauss_twice': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_233D_256N_hungarian_double_gauss_twice_2026-02-23_13-57-33.pth',
     '233D|256N|hungarian|double_gauss_twice_ftd': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_233D_256N_hungarian_double_gauss_twice_ftd_2026-02-23_14-15-41.pth',
+    '256D|128N|hungarian|double_gauss_twice': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_256D_128N_hungarian_double_gauss_twice_2026-02-23_16-37-20.pth',
+    '256D|128N|hungarian|double_gauss_twice_ftd': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_256D_128N_hungarian_double_gauss_twice_ftd_2026-02-23_16-45-07.pth',
+    '256D|128V|hungarian|double_gauss_twice': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_256D_128V_hungarian_double_gauss_twice_2026-02-23_16-36-09.pth',
+    '256D|128V|hungarian|double_gauss_twice_ftd': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_256D_128V_hungarian_double_gauss_twice_ftd_2026-02-23_16-43-58.pth',
     '377D|256N|hungarian|double_gauss_twice': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_377D_256N_hungarian_double_gauss_twice_2026-02-23_14-12-12.pth',
     '377D|256N|hungarian|double_gauss_twice_ftd': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_377D_256N_hungarian_double_gauss_twice_ftd_2026-02-23_14-16-50.pth',
+    '512D|128N|hungarian|double_gauss_twice': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_512D_128N_hungarian_double_gauss_twice_2026-02-23_16-39-16.pth',
+    '512D|128N|hungarian|double_gauss_twice_ftd': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_512D_128N_hungarian_double_gauss_twice_ftd_2026-02-23_16-47-05.pth',
+    '512D|128V|hungarian|double_gauss_twice': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_512D_128V_hungarian_double_gauss_twice_2026-02-23_16-38-08.pth',
+    '512D|128V|hungarian|double_gauss_twice_ftd': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_512D_128V_hungarian_double_gauss_twice_ftd_2026-02-23_16-45-54.pth',
     '610D|256N|hungarian|double_gauss_twice': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_610D_256N_hungarian_double_gauss_twice_2026-02-23_14-13-23.pth',
     '610D|256N|hungarian|double_gauss_twice_ftd': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_610D_256N_hungarian_double_gauss_twice_ftd_2026-02-23_14-17-57.pth',
+    '64D|128N|hungarian|double_gauss_twice': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_64D_128N_hungarian_double_gauss_twice_2026-02-23_16-33-28.pth',
+    '64D|128N|hungarian|double_gauss_twice_ftd': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_64D_128N_hungarian_double_gauss_twice_ftd_2026-02-23_16-41-13.pth',
+    '64D|128V|hungarian|double_gauss_twice': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_64D_128V_hungarian_double_gauss_twice_2026-02-23_16-29-08.pth',
+    '64D|128V|hungarian|double_gauss_twice_ftd': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_64D_128V_hungarian_double_gauss_twice_ftd_2026-02-23_16-40-04.pth',
     '987D|256N|hungarian|double_gauss_twice': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_987D_256N_hungarian_double_gauss_twice_2026-02-23_14-14-33.pth',
     '987D|256N|hungarian|double_gauss_twice_ftd': 'C:\\Users\\niels\\PycharmProjects\\ML_Projects\\FlowMatching\\src\\experiments\\../../models\\model_987D_256N_hungarian_double_gauss_twice_ftd_2026-02-23_14-19-17.pth',
 }

@@ -10,14 +10,19 @@ def create_experiment_report(experiment_results: list[dict], reports_dir: str) -
     report_path = os.path.join(reports_dir, f"experiment_report_{timestamp}.txt")
 
     with open(report_path, "w", encoding="utf-8") as f:
-        f.write("Flow Matching + OT Mass Experiment Report\n")
+        f.write("Flow Matching OT Mass Experiment Report\n")
         f.write("=" * 50 + "\n\n")
 
-        for idx, result in enumerate(experiment_results, start=1):
+        upd_idx = False
+        idx = 1
+        for result in experiment_results:
             combo = result["combination"]
             metrics = result["metrics"]
 
-            f.write(f"Experiment #{idx}\n")
+            if combo["vanilla"]:
+                f.write(f"Experiment #{idx} --- VANILLA\n")
+            else:
+                f.write(f"Experiment #{idx} --- OT-CFM\n")
             f.write("-" * 50 + "\n")
             f.write(f"scenario: {combo['scenario']}\n")
             f.write(f"dim: {combo['dim']}\n")
@@ -29,5 +34,11 @@ def create_experiment_report(experiment_results: list[dict], reports_dir: str) -
             for metric_name, metric_value in metrics.items():
                 f.write(f"  - {metric_name}: {metric_value}\n")
             f.write("\n")
+
+            if upd_idx:
+                idx += 1
+                upd_idx = False
+            else:
+                upd_idx = True
 
     return report_path

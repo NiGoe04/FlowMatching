@@ -8,7 +8,7 @@ from flow_matching.path import AffineProbPath
 from flow_matching.path.scheduler import CondOTScheduler
 from torch.utils.data import DataLoader
 
-from src.flow_matching.controller.cond_trainer import CondTrainerBatchOT
+from src.flow_matching.controller.cond_trainer import CondTrainerBatchOT, CondTrainer
 from src.flow_matching.controller.utils import store_model
 from src.flow_matching.model.coupling import Coupler
 from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
@@ -27,10 +27,16 @@ def _solver_display_name(ot_optimizer: str, epsilon: Optional[float]) -> str:
     raise ValueError(f"Unsupported ot_optimizer: {ot_optimizer}")
 
 
-def build_registry_key(dim: int, ot_batch_size: int, ot_optimizer: str, scenario_name: str, epsilon: Optional[float]) -> str:
+def build_registry_key(dim: int, ot_batch_size: int, ot_optimizer: str, scenario_name: str, epsilon: Optional[float], vanilla_fm_mode) -> str:
     if ot_optimizer == "hungarian":
-        return f"{dim}D|{ot_batch_size}N|{ot_optimizer}|{scenario_name}"
-    return f"{dim}D|{ot_batch_size}N|{ot_optimizer}|eps={epsilon}|{scenario_name}"
+        if vanilla_fm_mode:
+            return f"{dim}D|{ot_batch_size}V|{ot_optimizer}|{scenario_name}"
+        else:
+            return f"{dim}D|{ot_batch_size}N|{ot_optimizer}|{scenario_name}"
+    if vanilla_fm_mode:
+        return f"{dim}D|{ot_batch_size}V|{ot_optimizer}|eps={epsilon}|{scenario_name}"
+    else:
+        return f"{dim}D|{ot_batch_size}N|{ot_optimizer}|eps={epsilon}|{scenario_name}"
 
 
 def _persist_registry(model_paths: dict[str, str]) -> None:
@@ -38,8 +44,10 @@ def _persist_registry(model_paths: dict[str, str]) -> None:
         '"""Auto-managed registry of trained model paths for mass experiments."""',
         "",
         "# key format:",
-        "# \"{dim}D|{ot_batch_size}N|{ot_solver_name}|{scenario_name}\" for hungarian",
-        "# \"{dim}D|{ot_batch_size}N|{ot_solver_name}|eps={epsilon}|{scenario_name}\" for sinkhorn",
+        "# \"{dim}D|{ot_batch_size}V|{ot_solver_name}|{scenario_name}\" for hungarian, vanilla fm mode",
+        "# \"{dim}D|{ot_batch_size}V|{ot_solver_name}|eps={epsilon}|{scenario_name}\" for sinkhorn, vanilla fm mode",
+        "# \"{dim}D|{ot_batch_size}N|{ot_solver_name}|{scenario_name}\" for hungarian, batch OT mode",
+        "# \"{dim}D|{ot_batch_size}N|{ot_solver_name}|eps={epsilon}|{scenario_name}\" for sinkhorn, batch OT mode",
         "MODEL_PATHS: dict[str, str] = {",
     ]
     for key in sorted(model_paths):
@@ -73,6 +81,7 @@ def train_or_get_model(
     ot_optimizer: str,
     epsilon: Optional[float],
     params_exp: dict,
+    vanilla_fm_mode,
     device: torch.device,
 ) -> str:
     """
@@ -85,10 +94,10 @@ def train_or_get_model(
         )
 
     registry = _load_registry()
-    key = build_registry_key(dim, ot_batch_size, ot_optimizer, scenario_name, epsilon)
+    key = build_registry_key(dim, ot_batch_size, ot_optimizer, scenario_name, epsilon, vanilla_fm_mode)
     existing = registry.get(key)
     if existing and os.path.exists(existing):
-        print("Using existing registered model")
+        print(f"Using existing registered model. Vanilla FM mode: {vanilla_fm_mode}")
         return existing
 
     x0_train = gmd_x0.sample(int(params_exp["size_train_set"]))
@@ -106,19 +115,32 @@ def train_or_get_model(
     model = SimpleVelocityModel(device=device, dim=dim)
     optimizer = torch.optim.Adam(model.parameters(), float(params_exp["learning_rate"]))
     path = AffineProbPath(CondOTScheduler())
-    trainer = CondTrainerBatchOT(
-        model=model,
-        optimizer=optimizer,
-        path=path,
-        num_epochs=int(params_exp["num_epochs"]),
-        num_val_samples=int(params_exp["num_trainer_val_samples"]),
-        device=device,
-    )
+    if vanilla_fm_mode:
+        trainer = CondTrainer(
+            model=model,
+            optimizer=optimizer,
+            path=path,
+            num_epochs=int(params_exp["num_epochs"]),
+            num_val_samples=int(params_exp["num_trainer_val_samples"]),
+            device=device,
+        )
+    else:
+        trainer = CondTrainerBatchOT(
+            model=model,
+            optimizer=optimizer,
+            path=path,
+            num_epochs=int(params_exp["num_epochs"]),
+            num_val_samples=int(params_exp["num_trainer_val_samples"]),
+            device=device,
+        )
 
     trainer.training_loop(train_loader)
 
     solver_name = _solver_display_name(ot_optimizer, epsilon)
-    model_name = f"{dim}D_{ot_batch_size}N_{solver_name}_{scenario_name}"
+    if vanilla_fm_mode:
+        model_name = f"{dim}D_{ot_batch_size}V_{solver_name}_{scenario_name}"
+    else:
+        model_name = f"{dim}D_{ot_batch_size}N_{solver_name}_{scenario_name}"
     os.makedirs(MODELS_DIR, exist_ok=True)
     model_path = store_model(MODELS_DIR, model_name, model)
 
