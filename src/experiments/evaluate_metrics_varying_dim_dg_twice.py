@@ -122,8 +122,8 @@ for i, d in enumerate(DIMS):
     straight_o = Metrics.calculate_path_straightness(model_ot_cfm, x0)
 
     # NPE returns (PE, W2^2, NPE)
-    pe_v, w2_v, npe_v = Metrics.calculate_normalized_path_energy(model_vanilla, x0, x1_gt)
-    pe_o, w2_o, npe_o = Metrics.calculate_normalized_path_energy(model_ot_cfm, x0, x1_gt)
+    pe_v, w2_v, npe_v = Metrics.calculate_normalized_path_energy(model_vanilla, x0, x1_gt, 16)
+    pe_o, w2_o, npe_o = Metrics.calculate_normalized_path_energy(model_ot_cfm, x0, x1_gt, 16)
 
     # NLL
     _, psi_1_v = Metrics._calculate_mean_velocity_norm_sq(model_vanilla, x0)

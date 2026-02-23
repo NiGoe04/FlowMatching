@@ -102,7 +102,7 @@ class Metrics:
         return straightness
 
     @staticmethod
-    def calculate_normalized_path_energy(model, x0: torch.Tensor, x1: torch.Tensor) -> Tuple:
+    def calculate_normalized_path_energy(model, x0: torch.Tensor, x1: torch.Tensor, w2_sq_pre_calc: None|float=None) -> Tuple:
         """
         Computes normalized path energy:
 
@@ -122,7 +122,8 @@ class Metrics:
 
             coupler = Coupler(x0, x1)
             ot_coupling = coupler.get_n_ot_coupling(n=len(x0), cost_fn=TensorCost.quadratic_cost)
-            w2_sq = TensorCost.quadratic_cost(ot_coupling.x0, ot_coupling.x1).diagonal().mean()
+            w2_sq_pre_calc_tensor = x = torch.tensor(w2_sq_pre_calc, dtype=torch.float32, device=model_device)
+            w2_sq = TensorCost.quadratic_cost(ot_coupling.x0, ot_coupling.x1).diagonal().mean() if not w2_sq_pre_calc else w2_sq_pre_calc_tensor
             normalized_path_energy = (path_energy - w2_sq).abs() / w2_sq
 
         if was_training:
