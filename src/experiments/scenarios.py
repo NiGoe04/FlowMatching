@@ -18,7 +18,7 @@ variances_double_gauss_twice = {
     "x1": 0.1,
 }
 full_transport_dim_double_gauss_twice = False
-w2_sq_pre_calc_double_gauss_twice: Optional[float] = None
+w2_sq_pre_calc_double_gauss_twice: Optional[float] = 16.0
 
 means_double_gauss_twice_ftd = {
     "x0": [[-2.0, -2.0], [-2.0, 2.0]],
@@ -29,7 +29,7 @@ variances_double_gauss_twice_ftd = {
     "x1": 0.1,
 }
 full_transport_dim_double_gauss_twice_ftd = True
-w2_sq_pre_calc_double_gauss_twice_ftd: Optional[float] = None
+w2_sq_pre_calc_double_gauss_twice_ftd: Optional[float] = 16.0
 
 
 SCENARIO_NAMES = [

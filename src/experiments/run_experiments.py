@@ -16,8 +16,8 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DO_MASS_TRAINING = True
 
 SCENARIOS = ["double_gauss_twice", "double_gauss_twice_ftd"]
-DIMS = [2, 3, 5, 8, 21, 89, 144, 233, 377, 610]
-OT_BATCH_SIZES = [64, 128, 256]
+DIMS = [233, 377, 610, 987]
+OT_BATCH_SIZES = [256]
 OT_OPTIMIZERS = ["hungarian"]
 
 # Optional epsilon values are only used if a sinkhorn optimizer is configured.
@@ -29,7 +29,6 @@ PARAMS_EXP = {
     "size_train_set": 200000,
     "amount_samples": 1000,
     "num_trainer_val_samples": 5000,
-    "batch_size": 256,
 }
 
 
@@ -87,6 +86,14 @@ def run() -> str:
 
     for scenario_name, dim, ot_batch_size, (ot_optimizer, epsilon) in grid:
         gmd_x0, gmd_x1, _, w2_sq_pre_calc = get_scenario(scenario_name, dim, DEVICE)
+
+        print(
+            f"[SCENARIO] name={scenario_name} | "
+            f"dim={dim} | "
+            f"batch_size={ot_batch_size} | "
+            f"optimizer={ot_optimizer} | "
+            f"epsilon={epsilon}"
+        )
 
         if DO_MASS_TRAINING:
             model_path = train_or_get_model(

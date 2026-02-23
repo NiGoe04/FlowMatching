@@ -92,7 +92,7 @@ def make_two_component_gmm(center0, center1, variance, device):
 
 for i, d in enumerate(DIMS):
     # safety: centers must match d
-    if d < 2:
+    if d < 600:
         continue
 
     assert len(x_0_dist_centers_0[i]) == d

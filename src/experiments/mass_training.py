@@ -8,10 +8,9 @@ from flow_matching.path import AffineProbPath
 from flow_matching.path.scheduler import CondOTScheduler
 from torch.utils.data import DataLoader
 
-from src.flow_matching.controller.cond_trainer import CondTrainer
+from src.flow_matching.controller.cond_trainer import CondTrainerBatchOT
 from src.flow_matching.controller.utils import store_model
 from src.flow_matching.model.coupling import Coupler
-from src.flow_matching.model.losses import TensorCost
 from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
 
 REGISTRY_FILE = os.path.join(os.path.dirname(__file__), "current_model_paths.py")
@@ -89,24 +88,25 @@ def train_or_get_model(
     key = build_registry_key(dim, ot_batch_size, ot_optimizer, scenario_name, epsilon)
     existing = registry.get(key)
     if existing and os.path.exists(existing):
+        print("Using existing registered model")
         return existing
 
     x0_train = gmd_x0.sample(int(params_exp["size_train_set"]))
     x1_train = gmd_x1.sample(int(params_exp["size_train_set"]))
 
     coupler = Coupler(x0_train, x1_train)
-    coupling = coupler.get_n_ot_coupling(int(ot_batch_size), TensorCost.quadratic_cost)
+    coupling = coupler.get_independent_coupling()
 
     train_loader = DataLoader(
         coupling,
-        int(params_exp.get("batch_size", 256)),
+        ot_batch_size,
         shuffle=True,
     )
 
     model = SimpleVelocityModel(device=device, dim=dim)
     optimizer = torch.optim.Adam(model.parameters(), float(params_exp["learning_rate"]))
     path = AffineProbPath(CondOTScheduler())
-    trainer = CondTrainer(
+    trainer = CondTrainerBatchOT(
         model=model,
         optimizer=optimizer,
         path=path,
