@@ -1,5 +1,6 @@
 import torch
 import matplotlib.pyplot as plt
+import copy
 from flow_matching.path import ProbPath
 from torch.utils.data import DataLoader
 
@@ -24,8 +25,11 @@ class LRFinder:
         """
         self.model.train()
         # Store original state
-        orig_state = self.model.state_dict()
-        orig_optimizer_state = self.optimizer.state_dict()
+        # state_dict() returns references to tensors, so we need deep copies.
+        # Otherwise the range test mutates the "saved" state in-place.
+        orig_state = copy.deepcopy(self.model.state_dict())
+        orig_optimizer_state = copy.deepcopy(self.optimizer.state_dict())
+        was_training = self.model.training
 
         lr_mult = (lr_end / lr_start) ** (1 / num_iters)
         lr = lr_start
@@ -62,6 +66,7 @@ class LRFinder:
         # Restore model and optimizer state
         self.model.load_state_dict(orig_state)
         self.optimizer.load_state_dict(orig_optimizer_state)
+        self.model.train(was_training)
 
     def plot(self, skip_start=10, skip_end=5):
         """
