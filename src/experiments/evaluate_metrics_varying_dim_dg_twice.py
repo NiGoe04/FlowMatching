@@ -16,75 +16,62 @@ variance_target = 0.1
 # Configuration lists (same index = same experiment)
 # -------------------------
 
-DIMS = [2, 3, 5, 8, 21, 89, 144, 233, 377]
+def embed_2d_center_last(d: int, xy):
+    """
+    Embed a 2D center (x, y) into R^d by putting it in the last two coordinates.
+    Example: d=5, xy=(-2, 2) -> [0, 0, 0, -2, 2]
+    """
+    if d < 2:
+        raise ValueError("d must be >= 2")
+    x, y = xy
+    return [0.0] * (d - 2) + [float(x), float(y)]
 
-x_0_dist_centers_0 = [
-    [-2, -2],
-    [0, -2, -2],
-    [0] * 3 + [-2, -2],
-    [0] * 6 + [-2, -2],
-    [0] * 19 + [-2, -2],
-    [0] * 87 + [-2, -2],
-    [0] * 142 + [-2, -2],
-    [0] * 231 + [-2, -2],
-    [0] * 375 + [-2, -2],
-]
-x_0_dist_centers_1 = [
-    [-2,  2],
-    [0, -2,  2],
-    [0] * 3 + [-2,  2],
-    [0] * 6 + [-2,  2],
-    [0] * 19 + [-2,  2],
-    [0] * 87 + [-2,  2],
-    [0] * 142 + [-2,  2],
-    [0] * 231 + [-2,  2],
-    [0] * 375 + [-2,  2],
-]
-x_1_dist_centers_0 = [
-    [ 2, -2],
-    [0,  2, -2],
-    [0] * 3 + [ 2, -2],
-    [0] * 6 + [ 2, -2],
-    [0] * 19 + [ 2, -2],
-    [0] * 87 + [ 2, -2],
-    [0] * 142 + [ 2, -2],
-    [0] * 231 + [ 2, -2],
-    [0] * 375 + [ 2, -2],
-]
-x_1_dist_centers_1 = [
-    [ 2,  2],
-    [0,  2,  2],
-    [0] * 3 + [ 2,  2],
-    [0] * 6 + [ 2,  2],
-    [0] * 19 + [ 2,  2],
-    [0] * 87 + [ 2,  2],
-    [0] * 142 + [ 2,  2],
-    [0] * 231 + [ 2,  2],
-    [0] * 375 + [ 2,  2],
-]
+
+def make_center_lists(dims):
+    """
+    Builds the same four center-lists you wrote, but automatically from dims.
+    """
+    # your 2D base centers
+    x0_c0_2d = (-2, -2)
+    x0_c1_2d = (-2,  2)
+    x1_c0_2d = ( 2, -2)
+    x1_c1_2d = ( 2,  2)
+
+    x_0_dist_centers_0 = [embed_2d_center_last(d, x0_c0_2d) for d in dims]
+    x_0_dist_centers_1 = [embed_2d_center_last(d, x0_c1_2d) for d in dims]
+    x_1_dist_centers_0 = [embed_2d_center_last(d, x1_c0_2d) for d in dims]
+    x_1_dist_centers_1 = [embed_2d_center_last(d, x1_c1_2d) for d in dims]
+
+    return x_0_dist_centers_0, x_0_dist_centers_1, x_1_dist_centers_0, x_1_dist_centers_1
+
+DIMS = [2, 3, 5, 8, 21, 89, 144, 233, 377, 610]
+
+x_0_dist_centers_0, x_0_dist_centers_1, x_1_dist_centers_0, x_1_dist_centers_1 = make_center_lists(DIMS)
 
 model_paths_vanilla = [
-    os.path.join(MODEL_SAVE_PATH, "model_2D_double_gauss_twice_2026-01-29_16-26-39.pth"),
-    os.path.join(MODEL_SAVE_PATH, "model_3D_double_gauss_twice_2026-02-18_12-06-53.pth"),
-    os.path.join(MODEL_SAVE_PATH, "model_5D_double_gauss_twice_2026-02-18_13-36-49.pth"),
-    os.path.join(MODEL_SAVE_PATH, "model_8D_double_gauss_twice_2026-02-18_13-49-36.pth"),
-    os.path.join(MODEL_SAVE_PATH, "model_21D_double_gauss_twice_2026-02-18_14-26-37.pth"),
-    os.path.join(MODEL_SAVE_PATH, "model_89D_double_gauss_twice_2026-02-20_14-28-21.pth"),
-    os.path.join(MODEL_SAVE_PATH, "model_144D_double_gauss_twice_2026-02-20_15-20-05.pth"),
-    os.path.join(MODEL_SAVE_PATH, "model_233D_double_gauss_twice_2026-02-20_16-29-42.pth"),
-    os.path.join(MODEL_SAVE_PATH, "model_377D_double_gauss_twice_2026-02-20_16-38-50.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_2D_double_gauss_twice_2026-01-29_16-26-39.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_3D_double_gauss_twice_2026-02-18_12-06-53.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_5D_double_gauss_twice_2026-02-18_13-36-49.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_8D_double_gauss_twice_2026-02-18_13-49-36.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_21D_double_gauss_twice_2026-02-18_14-26-37.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_89D_double_gauss_twice_2026-02-20_14-28-21.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_144D_double_gauss_twice_2026-02-20_15-20-05.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_233D_double_gauss_twice_2026-02-20_16-29-42.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_377D_double_gauss_twice_2026-02-20_16-38-50.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_610D_double_gauss_twice_2026-02-23_11-36-47.pth"),
 ]
 
 model_paths_ot_cfm = [
-    os.path.join(MODEL_SAVE_PATH, "model_2D_double_gauss_twice_ot_2026-01-30_14-48-05.pth"),
-    os.path.join(MODEL_SAVE_PATH, "model_3D_double_gauss_twice_ot_2026-02-18_12-17-37.pth"),
-    os.path.join(MODEL_SAVE_PATH, "model_5D_double_gauss_twice_ot_2026-02-18_13-41-46.pth"),
-    os.path.join(MODEL_SAVE_PATH, "model_8D_double_gauss_twice_ot_2026-02-18_13-53-54.pth"),
-    os.path.join(MODEL_SAVE_PATH, "model_21D_double_gauss_twice_ot_2026-02-18_14-29-01.pth"),
-    os.path.join(MODEL_SAVE_PATH, "model_89D_double_gauss_twice_ot_2026-02-20_14-29-47.pth"),
-    os.path.join(MODEL_SAVE_PATH, "model_144D_double_gauss_twice_ot_2026-02-20_15-22-02.pth"),
-    os.path.join(MODEL_SAVE_PATH, "model_233D_double_gauss_twice_ot_2026-02-20_16-32-39.pth"),
-    os.path.join(MODEL_SAVE_PATH, "model_377D_double_gauss_twice_ot_2026-02-20_16-41-09.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_2D_double_gauss_twice_ot_2026-01-30_14-48-05.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_3D_double_gauss_twice_ot_2026-02-18_12-17-37.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_5D_double_gauss_twice_ot_2026-02-18_13-41-46.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_8D_double_gauss_twice_ot_2026-02-18_13-53-54.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_21D_double_gauss_twice_ot_2026-02-18_14-29-01.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_89D_double_gauss_twice_ot_2026-02-20_14-29-47.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_144D_double_gauss_twice_ot_2026-02-20_15-22-02.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_233D_double_gauss_twice_ot_2026-02-20_16-32-39.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_377D_double_gauss_twice_ot_2026-02-20_16-41-09.pth"),
+os.path.join(MODEL_SAVE_PATH, "model_610D_double_gauss_twice_ot_2026-02-23_11-38-34.pth"),
 ]
 
 n_total = int(PARAMS["amount_samples"])
@@ -105,6 +92,9 @@ def make_two_component_gmm(center0, center1, variance, device):
 
 for i, d in enumerate(DIMS):
     # safety: centers must match d
+    if d < 2:
+        continue
+
     assert len(x_0_dist_centers_0[i]) == d
     assert len(x_0_dist_centers_1[i]) == d
     assert len(x_1_dist_centers_0[i]) == d
