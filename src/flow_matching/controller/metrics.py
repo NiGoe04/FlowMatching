@@ -122,7 +122,7 @@ class Metrics:
 
             coupler = Coupler(x0, x1)
             ot_coupling = coupler.get_n_ot_coupling(n=len(x0), cost_fn=TensorCost.quadratic_cost)
-            if w2_sq_pre_calc:
+            if w2_sq_pre_calc is not None:
                 w2_sq = torch.tensor(w2_sq_pre_calc, dtype=torch.float32, device=model_device)
             else:
                 w2_sq = TensorCost.quadratic_cost(ot_coupling.x0, ot_coupling.x1).diagonal().mean()
