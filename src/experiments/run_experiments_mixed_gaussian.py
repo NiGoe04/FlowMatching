@@ -6,15 +6,15 @@ import os
 import torch
 
 from src.experiments.create_report import create_experiment_report
-from src.experiments.mass_training import train_or_get_model
+from src.experiments.mass_training_mixed_gaussian import train_or_get_model
 from src.experiments.scenarios import SCENARIO_NAMES, get_scenario
 from src.flow_matching.controller.metrics import Metrics
 from src.flow_matching.controller.utils import load_model_n_dim
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-SCENARIOS = ["double_gauss_twice", "double_gauss_twice_ftd"]
-DIMS = [64, 128, 256, 512]
+SCENARIOS = ["gaussian_circles"]
+DIMS = [1024, 2048]
 OT_BATCH_SIZES = [128]
 OT_OPTIMIZERS = ["hungarian"]
 
