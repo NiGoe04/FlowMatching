@@ -63,12 +63,22 @@ variances_gaussian_circles = {
 full_transport_dim_gaussian_circles = False
 w2_sq_pre_calc_gaussian_circles: Optional[float] = 16.0
 
+### "gaussian_circles_ftd"
+means_gaussian_circles_ftd = means_gaussian_circles
+variances_gaussian_circles_ftd = {
+    "x0": 0.1,
+    "x1": 0.1,
+}
+full_transport_dim_gaussian_circles_ftd = True
+w2_sq_pre_calc_gaussian_circles_ftd: Optional[float] = 32.0
+
 ##############################################################
 
 SCENARIO_NAMES = [
     "double_gauss_twice",
     "double_gauss_twice_ftd",
-    "gaussian_circles"
+    "gaussian_circles",
+    "gaussian_circles_ftd",
 ]
 
 def _calculate_normalized_centers_ftd_dg_twice(d: int, mode_sep: float = 2.0):
@@ -92,6 +102,26 @@ def _embed_2d_center_last(dim: int, xy: list[float]) -> list[float]:
     return [0.0] * (dim - 2) + [float(x), float(y)]
 
 
+def _calculate_normalized_centers_ftd_gaussian_circles(dim: int) -> tuple[list[list[float]], list[list[float]]]:
+    if dim < 2:
+        raise ValueError("dim must be >= 2")
+
+    transport_dims = dim - 2
+    if transport_dims <= 0:
+        x0_means = [_embed_2d_center_last(dim, m) for m in means_gaussian_circles_ftd["x0"]]
+        x1_means = [_embed_2d_center_last(dim, m) for m in means_gaussian_circles_ftd["x1"]]
+        return x0_means, x1_means
+
+    delta = 4.0 / math.sqrt(transport_dims)
+    a = delta / 2.0
+    x0_prefix = [-a] * transport_dims
+    x1_prefix = [a] * transport_dims
+
+    x0_means = [x0_prefix + [float(x), float(y)] for x, y in means_gaussian_circles_ftd["x0"]]
+    x1_means = [x1_prefix + [float(x), float(y)] for x, y in means_gaussian_circles_ftd["x1"]]
+    return x0_means, x1_means
+
+
 def _build_scenario_centers(name: str, dim: int) -> tuple[list[list[float]], list[list[float]], bool]:
     if name == "double_gauss_twice":
         x0_means = [_embed_2d_center_last(dim, m) for m in means_double_gauss_twice["x0"]]
@@ -108,6 +138,10 @@ def _build_scenario_centers(name: str, dim: int) -> tuple[list[list[float]], lis
         x0_means = [_embed_2d_center_last(dim, m) for m in means_gaussian_circles["x0"]]
         x1_means = [_embed_2d_center_last(dim, m) for m in means_gaussian_circles["x1"]]
         return x0_means, x1_means, full_transport_dim_gaussian_circles
+
+    if name == "gaussian_circles_ftd":
+        x0_means, x1_means = _calculate_normalized_centers_ftd_gaussian_circles(dim)
+        return x0_means, x1_means, full_transport_dim_gaussian_circles_ftd
 
     raise ValueError(f"Unknown scenario name: {name}. Available: {SCENARIO_NAMES}")
 
@@ -134,6 +168,10 @@ def get_scenario(
         w2_sq_pre_calc = w2_sq_pre_calc_gaussian_circles
         x0_variance = variances_gaussian_circles["x0"]
         x1_variance = variances_gaussian_circles["x1"]
+    elif scenario_name == "gaussian_circles_ftd":
+        w2_sq_pre_calc = w2_sq_pre_calc_gaussian_circles_ftd
+        x0_variance = variances_gaussian_circles_ftd["x0"]
+        x1_variance = variances_gaussian_circles_ftd["x1"]
     else:
         raise ValueError(f"Unknown scenario name: {scenario_name}. Available: {SCENARIO_NAMES}")
 
