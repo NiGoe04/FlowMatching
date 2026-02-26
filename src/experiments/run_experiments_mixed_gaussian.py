@@ -13,9 +13,11 @@ from src.flow_matching.controller.utils import load_model_n_dim
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-SCENARIOS = ["gaussian_circles"]
-DIMS = [1024, 2048]
-OT_BATCH_SIZES = [128]
+TRAIN_VANILLA_FOR_COMPARISON = False
+
+SCENARIOS = ["gaussian_circles_uftd"]
+DIMS = [64, 128, 256]
+OT_BATCH_SIZES = [256]
 OT_OPTIMIZERS = ["hungarian"]
 
 # Optional epsilon values are only used if a sinkhorn optimizer is configured.
@@ -83,29 +85,54 @@ def run() -> str:
     )
 
     for scenario_name, dim, ot_batch_size, (ot_optimizer, epsilon) in grid:
-        gmd_x0, gmd_x1, _, w2_sq_pre_calc = get_scenario(scenario_name, dim, DEVICE)
+        gmd_x0, gmd_x1, w2_sq_pre_calc = get_scenario(scenario_name, dim, DEVICE)
 
-        print(
-            f"[SCENARIO] name={scenario_name} | "
-            f"dim={dim} | "
-            f"batch_size={ot_batch_size} | "
-            f"optimizer={ot_optimizer} | "
-            f"epsilon={epsilon} | "
-            f"Vanilla FM"
-        )
+        if TRAIN_VANILLA_FOR_COMPARISON:
+            print(
+                f"[SCENARIO] name={scenario_name} | "
+                f"dim={dim} | "
+                f"batch_size={ot_batch_size} | "
+                f"optimizer={ot_optimizer} | "
+                f"epsilon={epsilon} | "
+                f"Vanilla FM"
+            )
 
-        model_path_vanilla = train_or_get_model(
-            dim=dim,
-            scenario_name=scenario_name,
-            gmd_x0=gmd_x0,
-            gmd_x1=gmd_x1,
-            ot_batch_size=ot_batch_size,
-            ot_optimizer=ot_optimizer,
-            epsilon=epsilon,
-            params_exp=PARAMS_EXP,
-            vanilla_fm_mode=True,
-            device=DEVICE,
-        )
+            model_path_vanilla = train_or_get_model(
+                dim=dim,
+                scenario_name=scenario_name,
+                gmd_x0=gmd_x0,
+                gmd_x1=gmd_x1,
+                ot_batch_size=ot_batch_size,
+                ot_optimizer=ot_optimizer,
+                epsilon=epsilon,
+                params_exp=PARAMS_EXP,
+                vanilla_fm_mode=True,
+                device=DEVICE,
+            )
+
+            model_vanilla = load_model_n_dim(dim, model_path_vanilla, device=DEVICE)
+            metrics_vanilla = _compute_metrics(
+                model=model_vanilla,
+                gmd_x0=gmd_x0,
+                gmd_x1=gmd_x1,
+                w2_sq_pre_calc=w2_sq_pre_calc,
+                amount_samples=int(PARAMS_EXP["amount_samples"]),
+            )
+
+            all_results.append(
+                {
+                    "combination": {
+                        "scenario": scenario_name,
+                        "dim": dim,
+                        "ot_batch_size": ot_batch_size,
+                        "ot_optimizer": ot_optimizer,
+                        "epsilon": epsilon,
+                        "model_path": model_path_vanilla,
+                        "vanilla": True
+                    },
+                    "metrics": metrics_vanilla,
+                }
+            )
 
         print(
             f"[SCENARIO] name={scenario_name} | "
@@ -129,15 +156,6 @@ def run() -> str:
             device=DEVICE,
         )
 
-        model_vanilla = load_model_n_dim(dim, model_path_vanilla, device=DEVICE)
-        metrics_vanilla = _compute_metrics(
-            model=model_vanilla,
-            gmd_x0=gmd_x0,
-            gmd_x1=gmd_x1,
-            w2_sq_pre_calc=w2_sq_pre_calc,
-            amount_samples=int(PARAMS_EXP["amount_samples"]),
-        )
-
         model_ot_cfm = load_model_n_dim(dim, model_path_ot_cfm, device=DEVICE)
         metrics_ot_cfm = _compute_metrics(
             model=model_ot_cfm,
@@ -145,21 +163,6 @@ def run() -> str:
             gmd_x1=gmd_x1,
             w2_sq_pre_calc=w2_sq_pre_calc,
             amount_samples=int(PARAMS_EXP["amount_samples"]),
-        )
-
-        all_results.append(
-            {
-                "combination": {
-                    "scenario": scenario_name,
-                    "dim": dim,
-                    "ot_batch_size": ot_batch_size,
-                    "ot_optimizer": ot_optimizer,
-                    "epsilon": epsilon,
-                    "model_path": model_path_vanilla,
-                    "vanilla": True
-                },
-                "metrics": metrics_vanilla,
-            }
         )
 
         all_results.append(
