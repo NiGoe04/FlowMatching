@@ -16,8 +16,8 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 TRAIN_VANILLA_FOR_COMPARISON = False
 
 SCENARIOS = ["gaussian_circles_uftd"]
-DIMS = [64, 128, 256]
-OT_BATCH_SIZES = [256]
+DIMS = [256, 1024]
+OT_BATCH_SIZES = [16, 32, 64, 128]
 OT_OPTIMIZERS = ["hungarian"]
 
 # Optional epsilon values are only used if a sinkhorn optimizer is configured.
