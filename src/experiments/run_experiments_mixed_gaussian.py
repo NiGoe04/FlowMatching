@@ -13,11 +13,11 @@ from src.flow_matching.controller.utils import load_model_n_dim
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-TRAIN_VANILLA_FOR_COMPARISON = False
+TRAIN_VANILLA_FOR_COMPARISON = True
 
-SCENARIOS = ["gaussian_circles_uftd"]
-DIMS = [256, 1024]
-OT_BATCH_SIZES = [16, 32, 64, 128]
+SCENARIOS = ["gaussian_mix_diff_var_1"]
+DIMS = [2, 3, 8, 16, 32]
+OT_BATCH_SIZES = [256]
 OT_OPTIMIZERS = ["hungarian"]
 
 # Optional epsilon values are only used if a sinkhorn optimizer is configured.

@@ -13,6 +13,9 @@ def _sample_combined(dim: int) -> torch.Tensor:
     gmd_x0, gmd_x1, _ = get_scenario(SCENARIO, dim=dim, device=DEVICE)
     x0 = gmd_x0.sample(N_SAMPLES)
     x1 = gmd_x1.sample(N_SAMPLES)
+    if dim == 2:
+        plot_tensor_2d(x0)
+        plot_tensor_2d(x1)
     return torch.cat((x0, x1), dim=0)
 
 
