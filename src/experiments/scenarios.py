@@ -61,6 +61,7 @@ SCENARIO_NAMES = [
     "gaussian_circles",
     "gaussian_circles_ftd",
     "gaussian_circles_uftd",
+    "gaussian_mix_diff_var_1",
 ]
 
 
@@ -138,6 +139,66 @@ def _calculate_centers_n_dim_shift(dim: int, base_means_x0_2d: list[list[float]]
     return x0_means, x1_means
 
 
+def _build_gaussian_mix_diff_var_1(dim: int) -> tuple[list[list[float]], list[list[float]], list[list[float]], list[list[float]]]:
+    """
+    Build a scalable, non-trivial source/target Gaussian mixture pair with:
+      - different number of source/target modes,
+      - per-component variance vectors,
+      - transport that is not a pure global shift.
+
+    Construction notes:
+      - Keep a recognizable 2D signature in the last two dims.
+      - Add component-specific structure to the first (dim-2) dims so intrinsic
+        dimensionality actually grows with dim.
+    """
+    if dim < 2:
+        raise ValueError("dim must be >= 2")
+
+    x0_xy = [
+        [-3.2, -1.0],
+        [-1.5, 2.8],
+        [0.7, -3.4],
+        [2.8, 1.6],
+    ]
+    x1_xy = [
+        [-4.0, 2.5],
+        [-0.8, -2.9],
+        [2.2, 3.1],
+        [4.0, -0.3],
+        [0.6, 0.9],
+        [3.0, -3.2],
+    ]
+
+    extra_dims = dim - 2
+    x0_means: list[list[float]] = []
+    x1_means: list[list[float]] = []
+
+    for idx, (x, y) in enumerate(x0_xy):
+        prefix = [
+            0.9 * math.sin(0.45 * (j + 1) + idx * 0.8) + 0.35 * math.cos((idx + 1.0) * (j + 1) / 5.0)
+            for j in range(extra_dims)
+        ]
+        x0_means.append(prefix + [x, y])
+
+    for idx, (x, y) in enumerate(x1_xy):
+        prefix = [
+            -0.7 * math.cos(0.4 * (j + 1) + idx * 0.55) + 0.55 * math.sin((idx + 1.3) * (j + 1) / 6.5)
+            for j in range(extra_dims)
+        ]
+        x1_means.append(prefix + [x, y])
+
+    x0_variances = [
+        [0.030 + 0.010 * ((idx + 2 * j) % 5) for j in range(dim)]
+        for idx in range(len(x0_means))
+    ]
+    x1_variances = [
+        [0.040 + 0.012 * ((2 * idx + j) % 6) for j in range(dim)]
+        for idx in range(len(x1_means))
+    ]
+
+    return x0_means, x1_means, x0_variances, x1_variances
+
+
 ##############################################################
 # Scenario builder
 ##############################################################
@@ -193,6 +254,10 @@ def _build_scenario_centers_and_w2_sq(
         w2_sq_pre_calc = float(dim) * float(shift_gaussian_circles_uftd) ** 2
         return x0_means, x1_means, w2_sq_pre_calc
 
+    if name == "gaussian_mix_diff_var_1":
+        x0_means, x1_means, _, _ = _build_gaussian_mix_diff_var_1(dim)
+        return x0_means, x1_means, None
+
     raise ValueError(f"Unknown scenario name: {name}. Available: {SCENARIO_NAMES}")
 
 
@@ -222,6 +287,8 @@ def get_scenario(
     elif scenario_name == "gaussian_circles_uftd":
         x0_variance = variances_gaussian_circles_uftd["x0"]
         x1_variance = variances_gaussian_circles_uftd["x1"]
+    elif scenario_name == "gaussian_mix_diff_var_1":
+        _, _, x0_variance, x1_variance = _build_gaussian_mix_diff_var_1(dim)
     else:
         raise ValueError(f"Unknown scenario name: {scenario_name}. Available: {SCENARIO_NAMES}")
 
