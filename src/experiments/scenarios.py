@@ -62,6 +62,7 @@ SCENARIO_NAMES = [
     "gaussian_circles_ftd",
     "gaussian_circles_uftd",
     "gaussian_mix_diff_var_1",
+    "gaussian_mix_diff_var_2",
 ]
 
 
@@ -199,6 +200,51 @@ def _build_gaussian_mix_diff_var_1(dim: int) -> tuple[list[list[float]], list[li
     return x0_means, x1_means, x0_variances, x1_variances
 
 
+def _build_gaussian_mix_diff_var_2(dim: int) -> tuple[list[list[float]], list[list[float]], list[list[float]], list[list[float]]]:
+    """
+    Variant of gaussian_mix_diff_var_1 with simple constant prefixes:
+      - x0 prefixes are zeros in the first (dim-2) dimensions,
+      - x1 prefixes are twos in the first (dim-2) dimensions.
+    The 2D signatures and per-component variance construction are identical to
+    gaussian_mix_diff_var_1.
+    """
+    if dim < 2:
+        raise ValueError("dim must be >= 2")
+
+    x0_xy = [
+        [-3.2, -1.0],
+        [-1.5, 2.8],
+        [0.7, -3.4],
+        [2.8, 1.6],
+    ]
+    x1_xy = [
+        [-4.0, 2.5],
+        [-0.8, -2.9],
+        [2.2, 3.1],
+        [4.0, -0.3],
+        [0.6, 0.9],
+        [3.0, -3.2],
+    ]
+
+    extra_dims = dim - 2
+    x0_prefix = [0.0] * extra_dims
+    x1_prefix = [2.0] * extra_dims
+
+    x0_means = [x0_prefix + [x, y] for x, y in x0_xy]
+    x1_means = [x1_prefix + [x, y] for x, y in x1_xy]
+
+    x0_variances = [
+        [0.030 + 0.010 * ((idx + 2 * j) % 5) for j in range(dim)]
+        for idx in range(len(x0_means))
+    ]
+    x1_variances = [
+        [0.040 + 0.012 * ((2 * idx + j) % 6) for j in range(dim)]
+        for idx in range(len(x1_means))
+    ]
+
+    return x0_means, x1_means, x0_variances, x1_variances
+
+
 ##############################################################
 # Scenario builder
 ##############################################################
@@ -258,6 +304,10 @@ def _build_scenario_centers_and_w2_sq(
         x0_means, x1_means, _, _ = _build_gaussian_mix_diff_var_1(dim)
         return x0_means, x1_means, None
 
+    if name == "gaussian_mix_diff_var_2":
+        x0_means, x1_means, _, _ = _build_gaussian_mix_diff_var_2(dim)
+        return x0_means, x1_means, None
+
     raise ValueError(f"Unknown scenario name: {name}. Available: {SCENARIO_NAMES}")
 
 
@@ -289,6 +339,8 @@ def get_scenario(
         x1_variance = variances_gaussian_circles_uftd["x1"]
     elif scenario_name == "gaussian_mix_diff_var_1":
         _, _, x0_variance, x1_variance = _build_gaussian_mix_diff_var_1(dim)
+    elif scenario_name == "gaussian_mix_diff_var_2":
+        _, _, x0_variance, x1_variance = _build_gaussian_mix_diff_var_2(dim)
     else:
         raise ValueError(f"Unknown scenario name: {scenario_name}. Available: {SCENARIO_NAMES}")
 
