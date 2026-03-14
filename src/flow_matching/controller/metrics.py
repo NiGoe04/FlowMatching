@@ -102,7 +102,8 @@ class Metrics:
         return straightness
 
     @staticmethod
-    def calculate_normalized_path_energy(model, x0: torch.Tensor, x1: torch.Tensor, w2_sq_pre_calc: None|float=None) -> Tuple:
+    def calculate_normalized_path_energy(model, x0: torch.Tensor, x1: torch.Tensor,
+                                         w2_sq_pre_calc: None | float = None) -> Tuple:
         """
         Computes normalized path energy:
 

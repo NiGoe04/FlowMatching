@@ -33,10 +33,63 @@ PLOT_BOUNDS = [-4, 4, -3, 3]
 DIM = 2
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MODEL_SAVE_PATH = "../../../../models"
-MODEL_PATH = os.path.join(MODEL_SAVE_PATH, "model_2D_single_gauss_x_shift_snapshots.pth")
+MODEL_PATH = os.path.join(MODEL_SAVE_PATH, "model_2D_single_gauss_twice_2026-03-14_12-19-54.pth")
 
-# 0, 0.125, ..., 1.0  -> 9 time points
+# 0, 0.125, ..., 1.0 -> 9 time points
 TIME_GRID = torch.linspace(0.0, 1.0, steps=9, device=DEVICE)
+
+
+def plot_particles_over_time(x_t_samples, bounds, time_grid):
+    """Create a 1 x T plot grid for particle snapshots."""
+    num_times = len(time_grid)
+    fig, axes = plt.subplots(1, num_times, figsize=(3 * num_times, 3.5), constrained_layout=True)
+
+    if num_times == 1:
+        axes = [axes]
+
+    for idx, t in enumerate(time_grid):
+        points = x_t_samples[idx].detach().cpu().numpy()
+
+        ax = axes[idx]
+        ax.scatter(points[:, 0], points[:, 1], s=8, alpha=0.65)
+        ax.set_xlim(bounds[0], bounds[1])
+        ax.set_ylim(bounds[2], bounds[3])
+        ax.set_aspect("equal")
+        ax.grid(True, linestyle="--", alpha=0.2)
+        ax.set_title(f"t = {t.item():.3f}")
+
+    plt.show()
+
+
+def plot_velocity_field_over_time(field_tensor, bounds, time_grid):
+    """Create a 1 x T plot grid for velocity field snapshots."""
+    num_times = len(time_grid)
+
+    field_np = field_tensor.detach().cpu().numpy()
+    h, w = field_np.shape[1], field_np.shape[2]
+    x = np.linspace(bounds[0], bounds[1], w)
+    y = np.linspace(bounds[2], bounds[3], h)
+    yy, xx = np.meshgrid(y, x, indexing="ij")
+
+    fig, axes = plt.subplots(1, num_times, figsize=(3 * num_times, 3.5), constrained_layout=True)
+
+    if num_times == 1:
+        axes = [axes]
+
+    for idx, t in enumerate(time_grid):
+        u = field_np[idx, :, :, 0]
+        v = field_np[idx, :, :, 1]
+
+        ax = axes[idx]
+        ax.quiver(xx, yy, u, v)
+        ax.set_xlim(bounds[0], bounds[1])
+        ax.set_ylim(bounds[2], bounds[3])
+        ax.set_aspect("equal")
+        ax.grid(True, linestyle="--", alpha=0.2)
+        ax.set_title(f"t = {t.item():.3f}")
+
+    plt.show()
+
 
 # data: single Gaussian from (-2, 0) to (2, 0)
 variance_source = 0.1
@@ -45,16 +98,23 @@ variance_target = 0.1
 x_0_center = [-2, 0]
 x_1_center = [2, 0]
 
-x_0_train = (Distribution(x_0_center, PARAMS["size_train_set"], device=DEVICE)
-             .with_gaussian_noise(variance=variance_source)
-             .tensor)
-x_1_train = (Distribution(x_1_center, PARAMS["size_train_set"], device=DEVICE)
-             .with_gaussian_noise(variance=variance_target)
-             .tensor)
+x_0_train = (
+    Distribution(x_0_center, PARAMS["size_train_set"], device=DEVICE)
+    .with_gaussian_noise(variance=variance_source)
+    .tensor
+)
 
-x_0_sample = (Distribution(x_0_center, PARAMS["amount_samples"], device=DEVICE)
-              .with_gaussian_noise(variance=variance_source)
-              .tensor)
+x_1_train = (
+    Distribution(x_1_center, PARAMS["size_train_set"], device=DEVICE)
+    .with_gaussian_noise(variance=variance_target)
+    .tensor
+)
+
+x_0_sample = (
+    Distribution(x_0_center, PARAMS["amount_samples"], device=DEVICE)
+    .with_gaussian_noise(variance=variance_source)
+    .tensor
+)
 
 coupler = Coupler(x_0_train, x_1_train)
 coupling = coupler.get_independent_coupling()
@@ -64,7 +124,14 @@ loader = DataLoader(coupling, PARAMS["batch_size"], shuffle=True)
 model = SimpleVelocityModel(device=DEVICE)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
-trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], PARAMS["num_trainer_val_samples"], device=DEVICE)
+trainer = CondTrainer(
+    model,
+    optimizer,
+    path,
+    PARAMS["num_epochs"],
+    PARAMS["num_trainer_val_samples"],
+    device=DEVICE,
+)
 
 if FIND_LR:
     lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)
@@ -76,42 +143,6 @@ if TRAIN_MODEL:
 
 if SAVE_MODEL:
     MODEL_PATH = store_model(MODEL_SAVE_PATH, NAME, model)
-
-
-def plot_particles_and_field_over_time(x_t_samples, field_tensor, bounds, time_grid):
-    num_times = len(time_grid)
-
-    field_np = field_tensor.detach().cpu().numpy()
-    h, w = field_np.shape[1], field_np.shape[2]
-    x = np.linspace(bounds[0], bounds[1], w)
-    y = np.linspace(bounds[2], bounds[3], h)
-    yy, xx = np.meshgrid(y, x, indexing='ij')
-
-    fig, axes = plt.subplots(2, num_times, figsize=(3 * num_times, 7), constrained_layout=True)
-
-    for idx, t in enumerate(time_grid):
-        points = x_t_samples[idx].detach().cpu().numpy()
-
-        ax_particles = axes[0, idx]
-        ax_particles.scatter(points[:, 0], points[:, 1], s=8, alpha=0.65)
-        ax_particles.set_xlim(bounds[0], bounds[1])
-        ax_particles.set_ylim(bounds[2], bounds[3])
-        ax_particles.set_aspect('equal')
-        ax_particles.grid(True, linestyle='--', alpha=0.2)
-        ax_particles.set_title(f"Particles\nt={t.item():.3f}")
-
-        u = field_np[idx, :, :, 0]
-        v = field_np[idx, :, :, 1]
-        ax_field = axes[1, idx]
-        ax_field.quiver(xx, yy, u, v)
-        ax_field.set_xlim(bounds[0], bounds[1])
-        ax_field.set_ylim(bounds[2], bounds[3])
-        ax_field.set_aspect('equal')
-        ax_field.grid(True, linestyle='--', alpha=0.2)
-        ax_field.set_title(f"Velocity field\nt={t.item():.3f}")
-
-    plt.show()
-
 
 if GENERATE_SAMPLES or VISUALIZE_SNAPSHOTS:
     model = load_model_n_dim(DIM, MODEL_PATH, device=DEVICE)
@@ -144,4 +175,5 @@ if VISUALIZE_SNAPSHOTS:
         device=DEVICE,
     )
 
-    plot_particles_and_field_over_time(x_t_samples, field_tensor, PLOT_BOUNDS, TIME_GRID)
+    plot_particles_over_time(x_t_samples, PLOT_BOUNDS, TIME_GRID)
+    plot_velocity_field_over_time(field_tensor, PLOT_BOUNDS, TIME_GRID)
