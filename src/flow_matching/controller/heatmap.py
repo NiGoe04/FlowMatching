@@ -37,11 +37,22 @@ def heatmap_minibatch_ot_2d(source_dist: Distribution2D,
                             num_ot_batch_size: int,
                             ot_cost_fn,
                             num_iterations: int,
-                            resolution: float):
+                            resolution: float,
+                            bounds=None):
     # construct map matrix
-    all_points = torch.cat([source_dist.tensor, target_dist.tensor], dim=0)
-    mins = all_points.min(dim=0).values  # [x_min, y_min]
-    maxs = all_points.max(dim=0).values  # [x_max, y_max]
+    if bounds is None:
+        all_points = torch.cat([source_dist.tensor, target_dist.tensor], dim=0)
+        mins = all_points.min(dim=0).values  # [x_min, y_min]
+        maxs = all_points.max(dim=0).values  # [x_max, y_max]
+    else:
+        if len(bounds) != 4:
+            raise ValueError("bounds must be in the format [x_from, x_to, y_from, y_to]")
+
+        mins = torch.tensor([bounds[0], bounds[2]], dtype=source_dist.tensor.dtype, device=source_dist.tensor.device)
+        maxs = torch.tensor([bounds[1], bounds[3]], dtype=source_dist.tensor.dtype, device=source_dist.tensor.device)
+
+        if not torch.all(maxs > mins):
+            raise ValueError("bounds must satisfy x_to > x_from and y_to > y_from")
 
     width = int(np.ceil((maxs[0] - mins[0]).item() * resolution))
     height = int(np.ceil((maxs[1] - mins[1]).item() * resolution))

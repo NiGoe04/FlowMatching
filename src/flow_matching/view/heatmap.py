@@ -10,6 +10,7 @@ def visualize_heatmap_minibatch_ot_2d(source_dist: Distribution2D,
                                       ot_cost_fn,
                                       num_iterations,
                                       resolution: float,
+                                      bounds=None,
                                       cmap="plasma",
                                       show_colorbar=True,
                                       figsize=(8, 8),
@@ -21,7 +22,8 @@ def visualize_heatmap_minibatch_ot_2d(source_dist: Distribution2D,
         num_ot_batch_size,
         ot_cost_fn,
         num_iterations,
-        resolution
+        resolution,
+        bounds
     )
 
     plt.figure(figsize=figsize)
@@ -44,15 +46,16 @@ def visualize_heatmap_minibatch_ot_2d(source_dist: Distribution2D,
     plt.tight_layout()
     plt.show()
 
+
 def visualize_heatmap_multi_cond_2d(source_dist: Distribution2D,
-                                      target_dist: Distribution2D,
-                                      num_conditions: int,
-                                      num_iterations,
-                                      resolution: float,
-                                      cmap="plasma",
-                                      show_colorbar=True,
-                                      figsize=(8, 8),
-                                      title="Approximated probability path as heatmap"):
+                                     target_dist: Distribution2D,
+                                     num_conditions: int,
+                                     num_iterations,
+                                     resolution: float,
+                                     cmap="plasma",
+                                     show_colorbar=True,
+                                     figsize=(8, 8),
+                                     title="Approximated probability path as heatmap"):
     # call heatmap function
     heatmap, mins, maxs = heatmap_multi_cond_2d(
         source_dist,
