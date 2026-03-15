@@ -35,13 +35,10 @@ def visualize_heatmap_minibatch_ot_2d(source_dist: Distribution2D,
         extent=(mins[0].item(), maxs[0].item(), mins[1].item(), maxs[1].item()),
         aspect='auto'  # ensures scaling matches coordinate ranges
     )
-    plt.title(title)
+    #plt.title(title)
 
     if show_colorbar:
-        plt.colorbar(label="Measure of overlap")
-
-    plt.xlabel("x")
-    plt.ylabel("y")
+        plt.colorbar(label="Probability mass concentration (relative)")
 
     plt.tight_layout()
     plt.show()

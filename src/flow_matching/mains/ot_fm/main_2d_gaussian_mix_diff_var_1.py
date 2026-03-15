@@ -22,10 +22,10 @@ from src.flow_matching.view.utils import (
 
 # steering console
 NAME = "2D_gaussian_mix_diff_var_1_ot"
-FIND_LR = True
-PLOT_TRAIN_DATA = True
-TRAIN_MODEL = True
-SAVE_MODEL = True
+FIND_LR = False
+PLOT_TRAIN_DATA = False
+TRAIN_MODEL = False
+SAVE_MODEL = False
 GENERATE_SAMPLES = True
 VISUALIZE_TIME = True
 VISUALIZE_FIELD = True
@@ -75,7 +75,7 @@ trainer = CondTrainerBatchOT(
 )
 
 # set a default model path (replace with your actual checkpoint if you want)
-model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_gaussian_circles.pth")
+model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_gaussian_mix_diff_var_1_ot_2026-02-28_13-22-42.pth")
 
 if FIND_LR:
     lr_finder = LRFinder(model, optimizer, path, ConditionalFMLoss(), device=DEVICE)

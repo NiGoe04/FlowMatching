@@ -15,8 +15,8 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 TRAIN_VANILLA_FOR_COMPARISON = True
 
-SCENARIOS = ["gaussian_mix_diff_var_1"]
-DIMS = [2, 3, 8, 16, 32]
+SCENARIOS = ["double_gauss_twice"]
+DIMS = [3, 8, 16, 32, 64, 128, 256, 512]
 OT_BATCH_SIZES = [256]
 OT_OPTIMIZERS = ["hungarian"]
 

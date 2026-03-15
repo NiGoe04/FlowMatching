@@ -71,52 +71,52 @@ def plot_tensor_2d_overlay(x_source, x_target, title="Source and Target Distribu
 
 
 def plot_particles_over_time(x_t_samples, bounds, time_grid):
-    """Create a 1 x T plot grid for particle snapshots."""
     num_times = len(time_grid)
-    fig, axes = plt.subplots(1, num_times, figsize=(3 * num_times, 3.5), constrained_layout=True)
 
-    if num_times == 1:
-        axes = [axes]
+    fig, axes = plt.subplots(3, 3, figsize=(9, 9), constrained_layout=True)
 
     for idx, t in enumerate(time_grid):
+        row = idx // 3
+        col = idx % 3
+
         points = x_t_samples[idx].detach().cpu().numpy()
 
-        ax = axes[idx]
+        ax = axes[row, col]
         ax.scatter(points[:, 0], points[:, 1], s=8, alpha=0.65)
+
         ax.set_xlim(bounds[0], bounds[1])
         ax.set_ylim(bounds[2], bounds[3])
         ax.set_aspect("equal")
-        ax.grid(True, linestyle="--", alpha=0.2)
+
         ax.set_title(f"t = {t.item():.3f}")
 
     plt.show()
 
 
 def plot_velocity_field_over_time(field_tensor, bounds, time_grid):
-    """Create a 1 x T plot grid for velocity field snapshots."""
-    num_times = len(time_grid)
-
     field_np = field_tensor.detach().cpu().numpy()
+
     h, w = field_np.shape[1], field_np.shape[2]
     x = np.linspace(bounds[0], bounds[1], w)
     y = np.linspace(bounds[2], bounds[3], h)
     yy, xx = np.meshgrid(y, x, indexing="ij")
 
-    fig, axes = plt.subplots(1, num_times, figsize=(3 * num_times, 3.5), constrained_layout=True)
-
-    if num_times == 1:
-        axes = [axes]
+    fig, axes = plt.subplots(3, 3, figsize=(9, 9), constrained_layout=True)
 
     for idx, t in enumerate(time_grid):
+        row = idx // 3
+        col = idx % 3
+
         u = field_np[idx, :, :, 0]
         v = field_np[idx, :, :, 1]
 
-        ax = axes[idx]
+        ax = axes[row, col]
         ax.quiver(xx, yy, u, v)
+
         ax.set_xlim(bounds[0], bounds[1])
         ax.set_ylim(bounds[2], bounds[3])
         ax.set_aspect("equal")
-        ax.grid(True, linestyle="--", alpha=0.2)
+
         ax.set_title(f"t = {t.item():.3f}")
 
     plt.show()
