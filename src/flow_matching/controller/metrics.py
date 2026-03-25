@@ -102,6 +102,12 @@ class Metrics:
         return straightness
 
     @staticmethod
+    def estimate_w2_sq(x0: torch.Tensor, x1: torch.Tensor) -> torch.Tensor:
+        coupler = Coupler(x0, x1)
+        ot_coupling = coupler.get_n_ot_coupling(n=len(x0), cost_fn=TensorCost.quadratic_cost)
+        return TensorCost.quadratic_cost(ot_coupling.x0, ot_coupling.x1).diagonal().mean()
+
+    @staticmethod
     def calculate_normalized_path_energy(model, x0: torch.Tensor, x1: torch.Tensor,
                                          w2_sq_pre_calc: None | float = None) -> Tuple:
         """
@@ -121,12 +127,10 @@ class Metrics:
             mean_velocity_norm_sq, _ = Metrics._calculate_mean_velocity_norm_sq(model, x0)
             path_energy = mean_velocity_norm_sq.mean()
 
-            coupler = Coupler(x0, x1)
-            ot_coupling = coupler.get_n_ot_coupling(n=len(x0), cost_fn=TensorCost.quadratic_cost)
             if w2_sq_pre_calc is not None:
                 w2_sq = torch.tensor(w2_sq_pre_calc, dtype=torch.float32, device=model_device)
             else:
-                w2_sq = TensorCost.quadratic_cost(ot_coupling.x0, ot_coupling.x1).diagonal().mean()
+                w2_sq = Metrics.estimate_w2_sq(x0, x1)
             normalized_path_energy = (path_energy - w2_sq).abs() / w2_sq
 
         if was_training:

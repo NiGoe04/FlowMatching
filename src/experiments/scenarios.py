@@ -16,29 +16,42 @@ base_means_double_gauss_twice = {
     "x0": [[-2.0, -2.0], [-2.0, 2.0]],
     "x1": [[2.0, -2.0], [2.0, 2.0]],
 }
+base_means_dg_twice_dist8 = {
+    "x0": [[-4.0, -2.0], [-4.0, 2.0]],
+    "x1": [[4.0, -2.0], [4.0, 2.0]],
+}
+base_means_dg_twice_dist16 = {
+    "x0": [[-8.0, -2.0], [-8.0, 2.0]],
+    "x1": [[8.0, -2.0], [8.0, 2.0]],
+}
+base_means_dg_twice_dist32 = {
+    "x0": [[-16.0, -2.0], [-16.0, 2.0]],
+    "x1": [[16.0, -2.0], [16.0, 2.0]],
+}
+
 variances_double_gauss_twice = {"x0": 0.1, "x1": 0.1}
 
 # "gaussian_circles" (2D base)
 base_means_gaussian_circles = {
     "x0": [
-        [4.0, 0.0],
-        [2.8284271, 2.8284271],
-        [0.0, 4.0],
-        [-2.8284271, 2.8284271],
-        [-4.0, 0.0],
-        [-2.8284271, -2.8284271],
-        [0.0, -4.0],
-        [2.8284271, -2.8284271],
+        [6.0, 0.0],
+        [4.2426407, 4.2426407],
+        [0.0, 6.0],
+        [-4.2426407, 4.2426407],
+        [-6.0, 0.0],
+        [-4.2426407, -4.2426407],
+        [0.0, -6.0],
+        [4.2426407, -4.2426407],
     ],
     "x1": [
-        [8.0, 0.0],
-        [5.6568542, 5.6568542],
-        [0.0, 8.0],
-        [-5.6568542, 5.6568542],
-        [-8.0, 0.0],
-        [-5.6568542, -5.6568542],
-        [0.0, -8.0],
-        [5.6568542, -5.6568542],
+        [12.0, 0.0],
+        [8.4852814, 8.4852814],
+        [0.0, 12.0],
+        [-8.4852814, 8.4852814],
+        [-12.0, 0.0],
+        [-8.4852814, -8.4852814],
+        [0.0, -12.0],
+        [8.4852814, -8.4852814],
     ],
 }
 variances_gaussian_circles = {"x0": 0.1, "x1": 0.1}
@@ -56,6 +69,10 @@ variances_gaussian_circles_uftd = {"x0": 0.1, "x1": 0.1}
 
 SCENARIO_NAMES = [
     "double_gauss_twice",
+    "dg_twice_dist8",
+    "dg_twice_dist16",
+    "dg_twice_dist32",
+    "dg_twice_td1_inc_dist",
     "double_gauss_twice_ftd",
     "double_gauss_twice_uftd",
     "gaussian_circles",
@@ -63,6 +80,7 @@ SCENARIO_NAMES = [
     "gaussian_circles_uftd",
     "gaussian_mix_diff_var_1",
     "gaussian_mix_diff_var_2",
+    "gaussian_mix_diff_var_3",
 ]
 
 
@@ -70,11 +88,17 @@ SCENARIO_NAMES = [
 # Helpers
 ##############################################################
 
-def _embed_2d_center_last(dim: int, xy: list[float]) -> list[float]:
+def _embed_2d_center_last(dim: int, xy: list[float], inc_dist=False, is_source=True) -> list[float]:
     if dim < 2:
         raise ValueError("dim must be >= 2")
     x, y = xy
-    return [0.0] * (dim - 2) + [float(x), float(y)]
+    if not inc_dist:
+        return [0.0] * (dim - 2) + [float(x), float(y)]
+    else:
+        if is_source:
+            return [0.0] * (dim - 2) + [float(x) - dim, float(y)]
+        else:
+            return [0.0] * (dim - 2) + [float(x) + dim, float(y)]
 
 
 def _calculate_normalized_centers_ftd_dg_twice(d: int, mode_sep: float = 2.0):
@@ -114,7 +138,7 @@ def _calculate_normalized_centers_ftd_gaussian_circles(dim: int) -> tuple[list[l
         x1_means = [_embed_2d_center_last(dim, m) for m in base_means_gaussian_circles["x1"]]
         return x0_means, x1_means
 
-    delta = 4.0 / math.sqrt(transport_dims)
+    delta = 6.0 / math.sqrt(transport_dims)
     a = delta / 2.0
     x0_prefix = [-a] * transport_dims
     x1_prefix = [a] * transport_dims
@@ -244,6 +268,85 @@ def _build_gaussian_mix_diff_var_2(dim: int) -> tuple[list[list[float]], list[li
 
     return x0_means, x1_means, x0_variances, x1_variances
 
+def _build_gaussian_mix_diff_var_3(dim: int) -> tuple[
+    list[list[float]], list[list[float]], list[list[float]], list[list[float]]
+]:
+    """
+    Build a non-trivial Gaussian mixture pair whose transport difficulty is
+    dimension-invariant:
+
+      - source/target are NOT related by one global shift,
+      - each component has its own variance vector,
+      - higher dimensions contain component-specific structure,
+      - but W2^2 does not increase with dim because all added dimensions
+        are identical on source and target under the intended correspondence.
+
+    Idea:
+      - The last two dims define the actual transport geometry.
+      - The first (dim-2) dims are a shared component-specific embedding.
+      - Therefore, extra dims add no transport cost.
+    """
+    if dim < 2:
+        raise ValueError("dim must be >= 2")
+
+    # Same number of modes on both sides to make the intended pairing explicit.
+    # Transport is non-trivial in the last two dims: definitely not one global shift.
+    x0_xy = [
+        [-3.2, -1.0],
+        [-1.5,  2.8],
+        [ 0.7, -3.4],
+        [ 2.8,  1.6],
+    ]
+    x1_xy = [
+        [-4.1,  2.3],   # different displacement than others
+        [-0.6, -2.7],
+        [ 2.4,  3.0],
+        [ 3.7, -0.4],
+    ]
+
+    extra_dims = dim - 2
+
+    x0_means: list[list[float]] = []
+    x1_means: list[list[float]] = []
+    x0_variances: list[list[float]] = []
+    x1_variances: list[list[float]] = []
+
+    for idx, ((x0, y0), (x1, y1)) in enumerate(zip(x0_xy, x1_xy)):
+        # Shared high-dimensional signature for corresponding source/target modes.
+        # This makes the scenario nontrivial in high dimension, but cost-free there.
+        shared_prefix = [
+            0.9 * math.sin(0.45 * (j + 1) + 0.8 * idx)
+            + 0.35 * math.cos((idx + 1.1) * (j + 1) / 5.0)
+            + 0.15 * math.sin((idx + 2.0) * (j + 1) / 3.7)
+            for j in range(extra_dims)
+        ]
+
+        x0_means.append(shared_prefix + [x0, y0])
+        x1_means.append(shared_prefix + [x1, y1])
+
+        # Component-specific variances, but identical in the added dims on both sides.
+        # Hence extra dimensions still contribute zero to W2^2.
+        shared_prefix_vars = [
+            0.030 + 0.008 * ((idx + 2 * j) % 5)
+            for j in range(extra_dims)
+        ]
+
+        # Allow different variances in the actual transport plane (last two dims).
+        # This keeps the pair nontrivial without making the higher dims harder.
+        x0_last2_vars = [
+            0.050 + 0.010 * (idx % 3),
+            0.070 + 0.012 * ((idx + 1) % 3),
+        ]
+        x1_last2_vars = [
+            0.060 + 0.011 * ((idx + 2) % 3),
+            0.045 + 0.014 * (idx % 3),
+        ]
+
+        x0_variances.append(shared_prefix_vars + x0_last2_vars)
+        x1_variances.append(shared_prefix_vars + x1_last2_vars)
+
+    return x0_means, x1_means, x0_variances, x1_variances
+
 
 ##############################################################
 # Scenario builder
@@ -260,6 +363,30 @@ def _build_scenario_centers_and_w2_sq(
         x0_means = [_embed_2d_center_last(dim, m) for m in base_means_double_gauss_twice["x0"]]
         x1_means = [_embed_2d_center_last(dim, m) for m in base_means_double_gauss_twice["x1"]]
         w2_sq_pre_calc = 16.0
+        return x0_means, x1_means, w2_sq_pre_calc
+
+    if name == "dg_twice_dist8":
+        x0_means = [_embed_2d_center_last(dim, m) for m in base_means_dg_twice_dist8["x0"]]
+        x1_means = [_embed_2d_center_last(dim, m) for m in base_means_dg_twice_dist8["x1"]]
+        w2_sq_pre_calc = 8.0 ** 2
+        return x0_means, x1_means, w2_sq_pre_calc
+
+    if name == "dg_twice_dist16":
+        x0_means = [_embed_2d_center_last(dim, m) for m in base_means_dg_twice_dist16["x0"]]
+        x1_means = [_embed_2d_center_last(dim, m) for m in base_means_dg_twice_dist16["x1"]]
+        w2_sq_pre_calc = 16.0 ** 2
+        return x0_means, x1_means, w2_sq_pre_calc
+
+    if name == "dg_twice_dist32":
+        x0_means = [_embed_2d_center_last(dim, m) for m in base_means_dg_twice_dist32["x0"]]
+        x1_means = [_embed_2d_center_last(dim, m) for m in base_means_dg_twice_dist32["x1"]]
+        w2_sq_pre_calc = 32.0 ** 2
+        return x0_means, x1_means, w2_sq_pre_calc
+
+    if name == "dg_twice_td1_inc_dist":
+        x0_means = [_embed_2d_center_last(dim, m, inc_dist=True, is_source=True) for m in base_means_double_gauss_twice["x0"]]
+        x1_means = [_embed_2d_center_last(dim, m, inc_dist=True, is_source=False) for m in base_means_double_gauss_twice["x1"]]
+        w2_sq_pre_calc = 16.0 + (2 * dim) ** 2
         return x0_means, x1_means, w2_sq_pre_calc
 
     if name == "double_gauss_twice_ftd":
@@ -281,7 +408,7 @@ def _build_scenario_centers_and_w2_sq(
     if name == "gaussian_circles":
         x0_means = [_embed_2d_center_last(dim, m) for m in base_means_gaussian_circles["x0"]]
         x1_means = [_embed_2d_center_last(dim, m) for m in base_means_gaussian_circles["x1"]]
-        w2_sq_pre_calc = 16.0
+        w2_sq_pre_calc = 72.0
         return x0_means, x1_means, w2_sq_pre_calc
 
     if name == "gaussian_circles_ftd":
@@ -308,6 +435,10 @@ def _build_scenario_centers_and_w2_sq(
         x0_means, x1_means, _, _ = _build_gaussian_mix_diff_var_2(dim)
         return x0_means, x1_means, None
 
+    if name == "gaussian_mix_diff_var_3":
+        x0_means, x1_means, _, _ = _build_gaussian_mix_diff_var_3(dim)
+        return x0_means, x1_means, None
+
     raise ValueError(f"Unknown scenario name: {name}. Available: {SCENARIO_NAMES}")
 
 
@@ -325,7 +456,8 @@ def get_scenario(
     """
     x0_means, x1_means, w2_sq_pre_calc = _build_scenario_centers_and_w2_sq(scenario_name, dim)
 
-    if scenario_name in ("double_gauss_twice", "double_gauss_twice_ftd"):
+    if scenario_name in ("double_gauss_twice", "double_gauss_twice_ftd", "dg_twice_td1_inc_dist", "dg_twice_dist8",
+                         "dg_twice_dist16", "dg_twice_dist32"):
         x0_variance = variances_double_gauss_twice["x0"]
         x1_variance = variances_double_gauss_twice["x1"]
     elif scenario_name == "double_gauss_twice_uftd":
@@ -341,6 +473,8 @@ def get_scenario(
         _, _, x0_variance, x1_variance = _build_gaussian_mix_diff_var_1(dim)
     elif scenario_name == "gaussian_mix_diff_var_2":
         _, _, x0_variance, x1_variance = _build_gaussian_mix_diff_var_2(dim)
+    elif scenario_name == "gaussian_mix_diff_var_3":
+        _, _, x0_variance, x1_variance = _build_gaussian_mix_diff_var_3(dim)
     else:
         raise ValueError(f"Unknown scenario name: {scenario_name}. Available: {SCENARIO_NAMES}")
 
