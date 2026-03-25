@@ -186,7 +186,7 @@ class CondTrainerBatchOT(CondTrainer):
         batch_size = x_1.shape[0]
         coupler_ot = Coupler(x_0, x_1)
         if self.use_sinkhorn:
-            return coupler_ot.get_n_sinkhorn_coupling(batch_size, self.sinkhorn_eps, self.ot_cost)
+            return coupler_ot.get_n_sinkhorn_coupling(batch_size, self.sinkhorn_eps)
         return coupler_ot.get_n_ot_coupling(batch_size, self.ot_cost)
 
     def _train(self, loader: DataLoader):

@@ -6,7 +6,7 @@ from flow_matching.path.scheduler import CondOTScheduler
 from flow_matching.solver import ODESolver
 from torch.utils.data import DataLoader
 
-from src.experiments.scenarios import get_scenario
+from src.experiments.mixed_gaussian_framework.scenarios import get_scenario
 from src.flow_matching.controller.cond_trainer import CondTrainer
 from src.flow_matching.controller.lr_finder import LRFinder
 from src.flow_matching.controller.utils import store_model, load_model_n_dim

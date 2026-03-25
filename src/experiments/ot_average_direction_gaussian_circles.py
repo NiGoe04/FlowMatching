@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import random
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import torch
 from datetime import datetime
 
-from src.experiments.scenarios import get_scenario
+from src.experiments.mixed_gaussian_framework.scenarios import get_scenario
 from src.flow_matching.model.coupling import Coupler
 from src.flow_matching.model.losses import TensorCost
 

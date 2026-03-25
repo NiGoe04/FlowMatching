@@ -1,6 +1,6 @@
 import torch
 
-from src.experiments.scenarios import get_scenario
+from src.experiments.mixed_gaussian_framework.scenarios import get_scenario
 from src.flow_matching.controller.metrics import Metrics
 from src.flow_matching.view.utils import plot_tensor_2d, plot_tensor_3d
 

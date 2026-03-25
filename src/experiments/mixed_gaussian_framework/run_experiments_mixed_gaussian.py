@@ -6,8 +6,8 @@ from pathlib import Path
 
 import torch
 
-from src.experiments.create_report import create_experiment_report
-from src.experiments.scenarios import SCENARIO_NAMES, get_scenario
+from src.experiments.mixed_gaussian_framework.create_report import create_experiment_report
+from src.experiments.mixed_gaussian_framework.scenarios import SCENARIO_NAMES, get_scenario
 from src.experiments.mixed_gaussian_framework.mass_training_mixed_gaussian import (
     train_or_get_model,
     save_loss_plot,

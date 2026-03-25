@@ -2,12 +2,7 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset
 from scipy.optimize import linear_sum_assignment
-
-try:
-    import ot
-except ImportError:
-    ot = None
-
+import ot
 
 class Coupling(Dataset):
     def __init__(self, x0_tensor, x1_tensor):
@@ -86,12 +81,7 @@ class Coupler:
 
         return Coupling(x0_coupled, x1_coupled)
 
-    def get_n_sinkhorn_coupling(self, n, eps=0.1, cost_fn=None):
-        if cost_fn is None:
-            raise ValueError("cost_fn must be provided for Sinkhorn coupling.")
-        if ot is None:
-            raise ImportError("Sinkhorn coupling requires the `ot` package (Python Optimal Transport).")
-
+    def get_n_sinkhorn_coupling(self, n, eps=0.1):
         N = len(self.x0)
 
         perm0 = torch.randperm(N)
@@ -109,18 +99,17 @@ class Coupler:
             x0_block = x0_shuffled[start:end]
             x1_block = x1_shuffled[start:end]
 
-            cost = cost_fn(x0_block, x1_block)
-            a = np.full(block_size, 1.0 / block_size, dtype=np.float64)
-            b = np.full(block_size, 1.0 / block_size, dtype=np.float64)
-
-            transport_plan = ot.sinkhorn(
-                a,
-                b,
-                cost.detach().cpu().numpy().astype(np.float64),
+            sol = ot.solve_sample(
+                x0_block.detach().cpu().numpy().astype(np.float64),
+                x1_block.detach().cpu().numpy().astype(np.float64),
                 reg=float(eps),
             )
 
-            row_ind, col_ind = linear_sum_assignment(-transport_plan)
+            plan = sol.plan  # shape [block_size, block_size]
+
+            # deterministic pairing: choose the max entry in each row
+            col_ind = plan.argmax(axis=1)
+            row_ind = np.arange(block_size)
 
             coupled_x0.append(x0_block[row_ind])
             coupled_x1.append(x1_block[col_ind])
