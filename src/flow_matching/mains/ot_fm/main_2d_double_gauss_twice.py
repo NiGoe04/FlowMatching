@@ -20,8 +20,8 @@ from src.flow_matching.view.utils import plot_tensor_2d, visualize_multi_slider_
 NAME = "2D_double_gauss_twice_ot"
 FIND_LR = False
 PLOT_TRAIN_DATA = False
-TRAIN_MODEL = False
-SAVE_MODEL = False
+TRAIN_MODEL = True
+SAVE_MODEL = True
 GENERATE_SAMPLES = True
 VISUALIZE_TIME = True
 VISUALIZE_FIELD = True

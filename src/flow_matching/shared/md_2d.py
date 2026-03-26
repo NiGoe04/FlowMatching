@@ -2,7 +2,7 @@ PARAMS = {
     "num_epochs": 8,         # leave as is
     "batch_size": 256,        # leave as is
     "learning_rate": 1.8e-3,    # leave as is
-    "size_train_set": 200000, # leave as is
+    "size_train_set": 80000, # leave as is
     "amount_samples": 1000,
     "num_trainer_val_samples": 5000,
     "solver_steps": 128,

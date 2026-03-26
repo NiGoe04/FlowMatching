@@ -5,7 +5,7 @@ from src.flow_matching.controller.metrics import Metrics
 from src.flow_matching.view.utils import plot_tensor_2d, plot_tensor_3d
 
 
-SCENARIO = "gaussian_mix_diff_var_3"
+SCENARIO = "4_to_2_gauss"
 N_SAMPLES = 1000
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

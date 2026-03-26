@@ -16,6 +16,10 @@ base_means_double_gauss_twice = {
     "x0": [[-2.0, -2.0], [-2.0, 2.0]],
     "x1": [[2.0, -2.0], [2.0, 2.0]],
 }
+base_means_4_to_2_gauss = {
+    "x0": [[-3.0, -3.0], [-3.0, -1.0], [-3.0, 1], [-3.0, 3]],
+    "x1": [[3.0, -2.0], [3.0, 2.0]],
+}
 base_means_dg_twice_dist8 = {
     "x0": [[-4.0, -2.0], [-4.0, 2.0]],
     "x1": [[4.0, -2.0], [4.0, 2.0]],
@@ -30,6 +34,7 @@ base_means_dg_twice_dist32 = {
 }
 
 variances_double_gauss_twice = {"x0": 0.1, "x1": 0.1}
+variances_4_to_2_gauss = {"x0": 0.05, "x1": 0.05}
 
 # "gaussian_circles" (2D base)
 base_means_gaussian_circles = {
@@ -81,6 +86,7 @@ SCENARIO_NAMES = [
     "gaussian_mix_diff_var_1",
     "gaussian_mix_diff_var_2",
     "gaussian_mix_diff_var_3",
+    "4_to_2_gauss"
 ]
 
 
@@ -439,6 +445,12 @@ def _build_scenario_centers_and_w2_sq(
         x0_means, x1_means, _, _ = _build_gaussian_mix_diff_var_3(dim)
         return x0_means, x1_means, None
 
+    if name == "4_to_2_gauss":
+        x0_means = [_embed_2d_center_last(dim, m) for m in base_means_4_to_2_gauss["x0"]]
+        x1_means = [_embed_2d_center_last(dim, m) for m in base_means_4_to_2_gauss["x1"]]
+        w2_sq_pre_calc = 37.0
+        return x0_means, x1_means, w2_sq_pre_calc
+
     raise ValueError(f"Unknown scenario name: {name}. Available: {SCENARIO_NAMES}")
 
 
@@ -475,6 +487,9 @@ def get_scenario(
         _, _, x0_variance, x1_variance = _build_gaussian_mix_diff_var_2(dim)
     elif scenario_name == "gaussian_mix_diff_var_3":
         _, _, x0_variance, x1_variance = _build_gaussian_mix_diff_var_3(dim)
+    elif scenario_name == "4_to_2_gauss":
+        x0_variance = variances_4_to_2_gauss["x0"]
+        x1_variance = variances_4_to_2_gauss["x1"]
     else:
         raise ValueError(f"Unknown scenario name: {scenario_name}. Available: {SCENARIO_NAMES}")
 

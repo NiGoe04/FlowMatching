@@ -6,7 +6,7 @@ from flow_matching.path.scheduler import CondOTScheduler
 from flow_matching.solver import ODESolver
 from torch.utils.data import DataLoader
 
-from src.flow_matching.controller.cond_trainer import CondTrainerBatchOT
+from src.flow_matching.controller.cond_trainer import CondTrainer
 from src.flow_matching.controller.lr_finder import LRFinder
 from src.flow_matching.controller.utils import store_model, load_model_n_dim
 from src.flow_matching.model.coupling import Coupler
@@ -33,16 +33,18 @@ MODEL_SAVE_PATH = "../../../../models"
 
 # data
 variance_source_x = 0.05
-variance_source_y = 0.05
+variance_source_y = 0.01
 variance_target_x = 0.05
-variance_target_y = 0.05
+variance_target_y = 0.01
 
 x_0_dist_center_0 = [-3, -3]
 x_0_dist_center_1 = [-3, -1]
 x_0_dist_center_2 = [-3, 1]
 x_0_dist_center_3 = [-3, 3]
-x_1_dist_center_0 = [3, -2]
-x_1_dist_center_1 = [3, 2]
+x_1_dist_center_0 = [3, -3]
+x_1_dist_center_1 = [3, -1]
+x_1_dist_center_2 = [3, 1]
+x_1_dist_center_3 = [3, 3]
 
 x_0_dist_0 = (Distribution2D(x_0_dist_center_0, int(PARAMS["size_train_set"] / 4), device=DEVICE)
               .with_gaussian_noise_x(variance=variance_source_x).with_gaussian_noise_y(variance=variance_source_y))
@@ -56,14 +58,20 @@ x_0_dist_2 = (Distribution2D(x_0_dist_center_2, int(PARAMS["size_train_set"] / 4
 x_0_dist_3 = (Distribution2D(x_0_dist_center_3, int(PARAMS["size_train_set"] / 4), device=DEVICE)
               .with_gaussian_noise_x(variance=variance_source_x).with_gaussian_noise_y(variance=variance_source_y))
 
-x_1_dist_0 = (Distribution2D(x_1_dist_center_0, int(PARAMS["size_train_set"] / 2), device=DEVICE)
+x_1_dist_0 = (Distribution2D(x_1_dist_center_0, int(PARAMS["size_train_set"] / 4), device=DEVICE)
               .with_gaussian_noise_x(variance=variance_target_x).with_gaussian_noise_y(variance=variance_target_y))
 
-x_1_dist_1 = (Distribution2D(x_1_dist_center_1, int(PARAMS["size_train_set"] / 2), device=DEVICE)
+x_1_dist_1 = (Distribution2D(x_1_dist_center_1, int(PARAMS["size_train_set"] / 4), device=DEVICE)
+              .with_gaussian_noise_x(variance=variance_target_x).with_gaussian_noise_y(variance=variance_target_y))
+
+x_1_dist_2 = (Distribution2D(x_1_dist_center_2, int(PARAMS["size_train_set"] / 4), device=DEVICE)
+              .with_gaussian_noise_x(variance=variance_target_x).with_gaussian_noise_y(variance=variance_target_y))
+
+x_1_dist_3 = (Distribution2D(x_1_dist_center_3, int(PARAMS["size_train_set"] / 4), device=DEVICE)
               .with_gaussian_noise_x(variance=variance_target_x).with_gaussian_noise_y(variance=variance_target_y))
 
 x_0_dist = x_0_dist_0.merged_with(x_0_dist_1).merged_with(x_0_dist_2).merged_with(x_0_dist_3)
-x_1_dist = x_1_dist_0.merged_with(x_1_dist_1)
+x_1_dist = x_1_dist_0.merged_with(x_1_dist_1).merged_with(x_1_dist_2).merged_with(x_1_dist_3)
 
 x_0_train = x_0_dist.tensor
 x_1_train = x_1_dist.tensor
@@ -101,7 +109,7 @@ loader = DataLoader(
 model = SimpleVelocityModel(device=DEVICE)
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
-trainer = CondTrainerBatchOT(model, optimizer, path, PARAMS["num_epochs"], PARAMS["num_trainer_val_samples"],  device=DEVICE)
+trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], PARAMS["num_trainer_val_samples"],  device=DEVICE)
 model_path = os.path.join(MODEL_SAVE_PATH, "model_2D_4_to_2_gauss_ot_2026-01-30_14-03-10.pth")
 
 if FIND_LR:

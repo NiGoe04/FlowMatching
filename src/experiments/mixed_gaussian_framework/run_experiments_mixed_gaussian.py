@@ -20,8 +20,8 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 TRAIN_VANILLA_FOR_COMPARISON = True
 SAVE_LOSS_PLOTS = True
 
-SCENARIOS = ["double_gauss_twice"]
-DIMS = [3, 8, 16, 32, 64, 128, 256, 512]
+SCENARIOS = ["4_to_2_gauss"]
+DIMS = [3, 32, 128, 512, 2048]
 OT_BATCH_SIZES = [256]
 OT_OPTIMIZERS = ["hungarian"]
 
@@ -29,9 +29,9 @@ OT_OPTIMIZERS = ["hungarian"]
 SINKHORN_EPSILONS = [0.01, 0.1]
 
 PARAMS_EXP = {
-    "num_epochs": 8,
+    "num_epochs": 10,
     "learning_rate": 1.8e-3,
-    "size_train_set": 200000,
+    "size_train_set": 80000,
     "amount_samples": 1000,
     "num_trainer_val_samples": 5000,
 }

@@ -18,7 +18,7 @@ from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
 FRAMEWORK_DIR = Path(__file__).resolve().parent
 REGISTRY_FILE = FRAMEWORK_DIR / "current_model_paths.py"
 MODELS_DIR = FRAMEWORK_DIR / "models"
-LOSS_PLOTS_DIR = FRAMEWORK_DIR.parent / "loss_plots"
+LOSS_PLOTS_DIR = FRAMEWORK_DIR / "loss_plots"
 
 
 def _solver_display_name(ot_optimizer: str, epsilon: Optional[float]) -> str:
@@ -75,11 +75,10 @@ def save_loss_plot(model_path: str, train_losses: list[float], val_losses: list[
 
     epochs = range(1, len(train_losses) + 1)
     plt.figure(figsize=(8, 5))
-    plt.plot(epochs, train_losses, label="train_loss")
-    plt.plot(epochs, val_losses, label="val_loss")
+    plt.plot(epochs, train_losses, label="training loss")
+    plt.plot(epochs, val_losses, label="validation loss")
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
-    plt.title("Training / Validation Loss")
     plt.legend()
     plt.grid(alpha=0.2)
 

@@ -13,7 +13,7 @@ BOUNDS = [-4, 4, -6, 6]
 
 # Heatmap parameters (requested)
 RESOLUTION = 16
-OT_BATCH_SIZE = 1
+OT_BATCH_SIZE = 2
 OT_ITERATIONS = 10
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
