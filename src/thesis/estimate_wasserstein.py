@@ -22,14 +22,15 @@ def get_distributions2(dist, dim):
 
 ########################################################################################################################
 
-SCENARIO = "double_gauss_twice"
-SIZE_TRAIN_SET = 100000
-OT_BATCH_SIZE = 256
+SCENARIO = "tri_gauss_twice"
+SIZE_TRAIN_SET = 2000
+OT_BATCH_SIZE = 2000
 
 def get_distributions(dim):
     return get_scenario(SCENARIO, dim, DEVICE)
 
-dims = [3, 4, 5, 6, 16, 64, 256, 1024]
+dims = [2, 512]
+#dims = [3, 4, 5, 6, 16, 64, 256, 1024]
 plot_tensors = False
 
 for dim in dims:
@@ -51,8 +52,8 @@ for dim in dims:
     for x_0, x_1 in loader:
         batch_size = x_1.shape[0]
         coupler_ot = Coupler(x_0, x_1)
-        #coupling_ot = coupler_ot.get_n_ot_coupling(batch_size, TensorCost.quadratic_cost)
-        coupling_ot = coupler_ot.get_independent_coupling()
+        coupling_ot = coupler_ot.get_n_ot_coupling(batch_size, TensorCost.quadratic_cost)
+        #coupling_ot = coupler_ot.get_independent_coupling()
         tensor_list_x0.append(coupling_ot.x0)
         tensor_list_x1.append(coupling_ot.x1)
 
