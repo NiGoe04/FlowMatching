@@ -22,6 +22,7 @@ SAVE_LOSS_PLOTS = True
 SAVE_METRICS_PLOTS = True
 SAVE_METRICS_TABLES = True
 ITERATIONS = 3
+LOG2_DIM_AXIS = False
 
 SCENARIOS = ["gaussian_circles"]
 DIMS = [3, 1024]
@@ -164,6 +165,7 @@ def _save_loss_plots_by_dimension(
 def _save_metrics_plots(
     metrics_by_group: dict[tuple[str, int, int], dict[str, list[float]]],
     timestamp: str,
+    log2_dim_axis: bool = False,
 ) -> list[str]:
     ensure_dir(METRICS_PLOTS_DIR)
     saved_paths: list[str] = []
@@ -188,6 +190,10 @@ def _save_metrics_plots(
 
             ax.set_xlabel("d")
             ax.set_ylabel(METRIC_LATEX_LABELS[metric_key])
+            if log2_dim_axis:
+                ax.set_xscale("log", base=2)
+                ax.set_xticks(dims)
+                ax.get_xaxis().set_major_formatter(plt.ScalarFormatter())
             ax.grid(alpha=0.2)
             ax.legend()
 
@@ -467,7 +473,11 @@ def run() -> str:
             print(f"Saved loss plot: {path}")
 
     if SAVE_METRICS_PLOTS:
-        saved_metric_plot_paths = _save_metrics_plots(metrics_by_group, timestamp)
+        saved_metric_plot_paths = _save_metrics_plots(
+            metrics_by_group,
+            timestamp,
+            log2_dim_axis=LOG2_DIM_AXIS,
+        )
         for path in saved_metric_plot_paths:
             print(f"Saved metrics plot: {path}")
 
