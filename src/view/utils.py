@@ -25,9 +25,9 @@ def save_w2_plot(
     output_dir: Path,
     scenario_name: str,
     timestamp: str,
-    run_idx: int,
     dims: Iterable[int],
     values_by_ot_batch_size: Dict[int, List[float]],
+    log2_dim_axis: bool = False,
 ) -> Path:
     ensure_dir(output_dir)
 
@@ -39,11 +39,14 @@ def save_w2_plot(
 
     ax.set_xlabel("d")
     ax.set_ylabel(r"$W_2^2(p^n, q^n)$")
-    ax.set_title(f"{scenario_name} | run {run_idx + 1}")
+    if log2_dim_axis:
+        ax.set_xscale("log", base=2)
+        ax.set_xticks(sorted_dims)
+        ax.get_xaxis().set_major_formatter(plt.ScalarFormatter())
     ax.grid(True, linestyle="--", alpha=0.5)
     ax.legend()
 
-    filename = f"{scenario_name}_{timestamp}_run_{run_idx + 1}.png"
+    filename = f"{scenario_name}_{timestamp}.png"
     file_path = output_dir / filename
     fig.tight_layout()
     fig.savefig(file_path, dpi=150)
