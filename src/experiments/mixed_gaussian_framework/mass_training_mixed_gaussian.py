@@ -20,6 +20,8 @@ REGISTRY_FILE = FRAMEWORK_DIR / "current_model_paths.py"
 MODELS_DIR = FRAMEWORK_DIR / "models"
 LOSS_PLOTS_DIR = FRAMEWORK_DIR / "loss_plots"
 
+STANDARD_OPTIMIZATION_BATCH_SIZE = 256
+
 
 def _solver_display_name(ot_optimizer: str, epsilon: Optional[float]) -> str:
     if ot_optimizer == "hungarian":
@@ -116,11 +118,18 @@ def train_or_get_model(
     coupler = Coupler(x0_train, x1_train)
     coupling = coupler.get_independent_coupling()
 
-    train_loader = DataLoader(
-        coupling,
-        ot_batch_size,
-        shuffle=True,
-    )
+    if ot_batch_size == 1:
+        train_loader = DataLoader(
+            coupling,
+            STANDARD_OPTIMIZATION_BATCH_SIZE,
+            shuffle=True,
+        )
+    else:
+        train_loader = DataLoader(
+            coupling,
+            ot_batch_size,
+            shuffle=True,
+        )
 
     model = SimpleVelocityModel(device=device, dim=dim)
     optimizer = torch.optim.Adam(model.parameters(), float(params_exp["learning_rate"]))
@@ -129,7 +138,7 @@ def train_or_get_model(
     use_sinkhorn = ot_optimizer == "sinkhorn"
     sinkhorn_eps = 0.1 if epsilon is None else float(epsilon)
 
-    if vanilla_fm_mode:
+    if vanilla_fm_mode or ot_batch_size == 1:
         trainer = CondTrainer(
             model=model,
             optimizer=optimizer,
