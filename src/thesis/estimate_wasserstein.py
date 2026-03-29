@@ -18,6 +18,7 @@ NUM_DATA_POINTS = 2000
 OT_BATCH_SIZES = [100, 500, 1000, 2000]
 DIMS = [2, 4, 8, 16, 32]
 ITERATIONS = 3
+LOG2_DIM_AXIS = False
 
 PLOTS_OUTPUT_DIR = Path("src/thesis/output/plots")
 TABLES_OUTPUT_DIR = Path("src/thesis/output/tables")
@@ -65,24 +66,30 @@ def main() -> None:
 
     for run_idx in range(ITERATIONS):
         print(f"Run {run_idx + 1}/{ITERATIONS}")
-        run_curves = defaultdict(list)
-
         for ot_batch_size in OT_BATCH_SIZES:
             for dim in DIMS:
                 w2_sq = estimate_squared_w2(dim=dim, ot_batch_size=ot_batch_size)
                 results[ot_batch_size][dim].append(w2_sq)
-                run_curves[ot_batch_size].append(w2_sq)
                 print(f"k={ot_batch_size}, dim={dim}, w2sq={w2_sq:.6f}")
 
-        plot_path = save_w2_plot(
-            output_dir=PLOTS_OUTPUT_DIR,
-            scenario_name=SCENARIO,
-            timestamp=timestamp,
-            run_idx=run_idx,
-            dims=DIMS,
-            values_by_ot_batch_size=dict(run_curves),
-        )
-        print(f"Saved plot: {plot_path}")
+
+
+    mean_curves = {}
+    for ot_batch_size in OT_BATCH_SIZES:
+        mean_curves[ot_batch_size] = []
+        for dim in DIMS:
+            values = torch.tensor(results[ot_batch_size][dim])
+            mean_curves[ot_batch_size].append(float(values.mean().item()))
+
+    plot_path = save_w2_plot(
+        output_dir=PLOTS_OUTPUT_DIR,
+        scenario_name=SCENARIO,
+        timestamp=timestamp,
+        dims=DIMS,
+        values_by_ot_batch_size=mean_curves,
+        log2_dim_axis=LOG2_DIM_AXIS,
+    )
+    print(f"Saved plot: {plot_path}")
 
     mean_std_matrix = {}
     for ot_batch_size in OT_BATCH_SIZES:
