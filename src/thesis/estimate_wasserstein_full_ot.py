@@ -12,14 +12,14 @@ from src.view.utils import build_w2_latex_table, make_timestamp, save_w2_latex_t
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-SCENARIO = "tri_gauss_twice"
+SCENARIO = "gaussian_circles"
 NUM_DATA_POINTS = [100, 500, 1000, 2000]
-DIMS = [2, 4, 8, 16, 32]
-ITERATIONS = 3
-LOG2_DIM_AXIS = False
+DIMS = [3, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+ITERATIONS = 6
+LOG2_DIM_AXIS = True
 
-PLOTS_OUTPUT_DIR = Path("src/thesis/output/plots")
-TABLES_OUTPUT_DIR = Path("src/thesis/output/tables")
+PLOTS_OUTPUT_DIR = Path("output/v2/plots")
+TABLES_OUTPUT_DIR = Path("output/v2/tables")
 
 
 def compute_transport_cost(x0: torch.Tensor, x1: torch.Tensor) -> torch.Tensor:
@@ -81,7 +81,7 @@ def main() -> None:
             values = torch.tensor(results[num_data_points][dim])
             mean_std_matrix[num_data_points][dim] = (
                 float(values.mean().item()),
-                float(values.std(unbiased=False).item()),
+                float(values.std(unbiased=True).item()),
             )
 
     latex_content = build_w2_latex_table(

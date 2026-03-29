@@ -13,15 +13,15 @@ from src.view.utils import build_w2_latex_table, make_timestamp, save_w2_latex_t
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-SCENARIO = "tri_gauss_twice"
-NUM_DATA_POINTS = 2000
-OT_BATCH_SIZES = [100, 500, 1000, 2000]
-DIMS = [2, 4, 8, 16, 32]
-ITERATIONS = 3
-LOG2_DIM_AXIS = False
+SCENARIO = "gaussian_circles"
+NUM_DATA_POINTS = 80000
+OT_BATCH_SIZES = [1, 32, 64, 128, 256, 512]
+DIMS = [3, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+ITERATIONS = 6
+LOG2_DIM_AXIS = True
 
-PLOTS_OUTPUT_DIR = Path("src/thesis/output/plots")
-TABLES_OUTPUT_DIR = Path("src/thesis/output/tables")
+PLOTS_OUTPUT_DIR = Path("output/plots")
+TABLES_OUTPUT_DIR = Path("output/tables")
 
 
 def compute_transport_cost(x0: torch.Tensor, x1: torch.Tensor) -> torch.Tensor:
@@ -47,7 +47,10 @@ def estimate_squared_w2(dim: int, ot_batch_size: int) -> float:
     for x_0, x_1 in loader:
         batch_size = x_1.shape[0]
         coupler_ot = Coupler(x_0, x_1)
-        coupling_ot = coupler_ot.get_n_ot_coupling(batch_size, TensorCost.quadratic_cost)
+        if ot_batch_size == 1:
+            coupling_ot = coupler_ot.get_independent_coupling()
+        else:
+            coupling_ot = coupler_ot.get_n_ot_coupling(batch_size, TensorCost.quadratic_cost)
         tensor_list_x0.append(coupling_ot.x0)
         tensor_list_x1.append(coupling_ot.x1)
 
@@ -71,8 +74,6 @@ def main() -> None:
                 w2_sq = estimate_squared_w2(dim=dim, ot_batch_size=ot_batch_size)
                 results[ot_batch_size][dim].append(w2_sq)
                 print(f"k={ot_batch_size}, dim={dim}, w2sq={w2_sq:.6f}")
-
-
 
     mean_curves = {}
     for ot_batch_size in OT_BATCH_SIZES:
@@ -98,7 +99,7 @@ def main() -> None:
             values = torch.tensor(results[ot_batch_size][dim])
             mean_std_matrix[ot_batch_size][dim] = (
                 float(values.mean().item()),
-                float(values.std(unbiased=False).item()),
+                float(values.std(unbiased=True).item()),
             )
 
     latex_content = build_w2_latex_table(

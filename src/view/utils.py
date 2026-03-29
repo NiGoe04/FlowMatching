@@ -56,6 +56,13 @@ def save_w2_plot(
     return file_path
 
 
+def _decimal_places(x: float) -> int:
+    s = f"{x:.10g}"  # avoid floating point artifacts
+    if "." in s:
+        return len(s.split(".")[1])
+    return 0
+
+
 def build_w2_latex_table(
     dims: Iterable[int],
     ot_batch_sizes: Iterable[int],
@@ -65,7 +72,7 @@ def build_w2_latex_table(
     dims_list = list(dims)
     ot_batch_sizes_list = list(ot_batch_sizes)
 
-    col_spec = "c|" + " ".join(["c"] * len(dims_list))
+    col_spec = "c|" + " ".join(["c"] * len(ot_batch_sizes_list))
 
     curve_symbol = "n" if use_num_data_points_symbol else "k"
 
@@ -75,17 +82,24 @@ def build_w2_latex_table(
         "",
         f"\\begin{{tabular}}{{{col_spec}}}",
         "\\toprule",
-        f"${curve_symbol} \\backslash d$ & " + " & ".join([str(d) for d in dims_list]) + " \\\\",
+        "$d \\backslash k$ & " + " & ".join([str(k) for k in ot_batch_sizes_list]) + " \\\\",
         "\\midrule",
     ]
 
-    for k in ot_batch_sizes_list:
+    for d in dims_list:
         row_values = []
-        for d in dims_list:
+        for k in ot_batch_sizes_list:
             mean_val, std_val = mean_std_matrix[k][d]
+
             std_rounded = round_to_significant_digit(std_val, significant_digits=1)
-            row_values.append(f"\\num{{{mean_val:.4f} +- {std_rounded}}}")
-        lines.append(f"{k} & " + " & ".join(row_values) + " \\\\")
+            decimals = _decimal_places(std_rounded)
+
+            mean_rounded = round(mean_val, decimals)
+            row_values.append(
+                f"\\num{{{mean_rounded:.{decimals}f} +- {std_rounded:.{decimals}f}}}"
+            )
+
+        lines.append(f"{d} & " + " & ".join(row_values) + " \\\\")
 
     batch_descriptor = "numbers of data points" if use_num_data_points_symbol else "OT batch sizes"
 
