@@ -28,14 +28,16 @@ def save_w2_plot(
     dims: Iterable[int],
     values_by_ot_batch_size: Dict[int, List[float]],
     log2_dim_axis: bool = False,
+    use_num_data_points_symbol: bool = False,
 ) -> Path:
     ensure_dir(output_dir)
 
     sorted_dims = list(dims)
     fig, ax = plt.subplots(figsize=(8, 5))
 
+    curve_symbol = "n" if use_num_data_points_symbol else "k"
     for ot_batch_size, values in values_by_ot_batch_size.items():
-        ax.plot(sorted_dims, values, marker="o", linewidth=2, label=f"k = {ot_batch_size}")
+        ax.plot(sorted_dims, values, marker="o", linewidth=2, label=f"{curve_symbol} = {ot_batch_size}")
 
     ax.set_xlabel("d")
     ax.set_ylabel(r"$W_2^2(p^n, q^n)$")
@@ -58,11 +60,14 @@ def build_w2_latex_table(
     dims: Iterable[int],
     ot_batch_sizes: Iterable[int],
     mean_std_matrix: Dict[int, Dict[int, tuple[float, float]]],
+    use_num_data_points_symbol: bool = False,
 ) -> str:
     dims_list = list(dims)
     ot_batch_sizes_list = list(ot_batch_sizes)
 
     col_spec = "c|" + " ".join(["c"] * len(dims_list))
+
+    curve_symbol = "n" if use_num_data_points_symbol else "k"
 
     lines = [
         "\\begin{table}[h]",
@@ -70,7 +75,7 @@ def build_w2_latex_table(
         "",
         f"\\begin{{tabular}}{{{col_spec}}}",
         "\\toprule",
-        "$k \\backslash d$ & " + " & ".join([str(d) for d in dims_list]) + " \\\\",
+        f"${curve_symbol} \\backslash d$ & " + " & ".join([str(d) for d in dims_list]) + " \\\\",
         "\\midrule",
     ]
 
@@ -82,12 +87,14 @@ def build_w2_latex_table(
             row_values.append(f"\\num{{{mean_val:.4f} +- {std_rounded}}}")
         lines.append(f"{k} & " + " & ".join(row_values) + " \\\\")
 
+    batch_descriptor = "numbers of data points" if use_num_data_points_symbol else "OT batch sizes"
+
     lines.extend(
         [
             "\\bottomrule",
             "\\end{tabular}",
             "",
-            "\\caption{Estimated squared 2-Wasserstein distances $W_2^2(p^n, q^n)$ across OT batch sizes $k$ and dimensions $d$. Values are reported as mean $\\pm$ standard deviation over multiple runs.}",
+            f"\\caption{{Estimated squared 2-Wasserstein distances $W_2^2(p^n, q^n)$ across {batch_descriptor} ${curve_symbol}$ and dimensions $d$. Values are reported as mean $\\pm$ standard deviation over multiple runs.}}",
             "\\label{tab:w2_nd_matrix}",
             "",
             "\\end{table}",
