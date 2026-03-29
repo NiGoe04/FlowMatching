@@ -82,7 +82,7 @@ def build_w2_latex_table(
         "",
         f"\\begin{{tabular}}{{{col_spec}}}",
         "\\toprule",
-        "$d \\backslash k$ & " + " & ".join([str(k) for k in ot_batch_sizes_list]) + " \\\\",
+        f"$d \\backslash {curve_symbol}$ & " + " & ".join([str(k) for k in ot_batch_sizes_list]) + " \\\\",
         "\\midrule",
     ]
 
