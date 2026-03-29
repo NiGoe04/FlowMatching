@@ -13,7 +13,7 @@ from src.experiments.mixed_gaussian_framework.mass_training_mixed_gaussian impor
 from src.experiments.mixed_gaussian_framework.scenarios import SCENARIO_NAMES, get_scenario
 from src.flow_matching.controller.metrics import Metrics
 from src.flow_matching.controller.utils import load_model_n_dim
-from src.view.utils import ensure_dir, make_timestamp
+from src.view.utils import decimal_places, ensure_dir, make_timestamp, round_to_significant_digit
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -211,6 +211,12 @@ def _build_metrics_table_latex(
     dims: list[int],
     metrics_by_group: dict[tuple[str, int, int], dict[str, list[float]]],
 ) -> str:
+    def _format_mean_std(mean_val: float, std_val: float) -> str:
+        std_rounded = round_to_significant_digit(std_val, significant_digits=1)
+        decimals = decimal_places(std_rounded)
+        mean_rounded = round(mean_val, decimals)
+        return f"\\num{{{mean_rounded:.{decimals}f} +- {std_rounded:.{decimals}f}}}"
+
     lines = [
         "\\begin{table}[H]",
         "\\centering",
@@ -231,11 +237,11 @@ def _build_metrics_table_latex(
 
         row = (
             f"{dim}"
-            f" & \\num{{{stats['path_energy'][0]:.6g} +- {stats['path_energy'][1]:.3g}}}"
-            f" & \\num{{{stats['normalized_path_energy'][0]:.6g} +- {stats['normalized_path_energy'][1]:.3g}}}"
-            f" & \\num{{{stats['straightness'][0]:.6g} +- {stats['straightness'][1]:.3g}}}"
-            f" & \\num{{{stats['nll_per_dim'][0]:.6g} +- {stats['nll_per_dim'][1]:.3g}}}"
-            f" & \\num{{{stats['nll_mi_corrected_per_dim'][0]:.6g} +- {stats['nll_mi_corrected_per_dim'][1]:.3g}}} "
+            f" & {_format_mean_std(stats['path_energy'][0], stats['path_energy'][1])}"
+            f" & {_format_mean_std(stats['normalized_path_energy'][0], stats['normalized_path_energy'][1])}"
+            f" & {_format_mean_std(stats['straightness'][0], stats['straightness'][1])}"
+            f" & {_format_mean_std(stats['nll_per_dim'][0], stats['nll_per_dim'][1])}"
+            f" & {_format_mean_std(stats['nll_mi_corrected_per_dim'][0], stats['nll_mi_corrected_per_dim'][1])} "
             + r"\\"
         )
         lines.append(row)
