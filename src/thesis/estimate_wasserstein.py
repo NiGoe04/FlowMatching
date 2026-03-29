@@ -1,50 +1,44 @@
+from __future__ import annotations
+
+from collections import defaultdict
+from pathlib import Path
+
 import torch
 from torch.utils.data import DataLoader
 
 from src.experiments.mixed_gaussian_framework.scenarios import get_scenario
 from src.flow_matching.model.coupling import Coupler
-from src.flow_matching.model.distribution import GaussianMixtureDistribution
 from src.flow_matching.model.losses import TensorCost
-from src.flow_matching.view.utils import plot_tensor_2d, plot_tensor_3d
+from src.view.utils import build_w2_latex_table, make_timestamp, save_w2_latex_table, save_w2_plot
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+SCENARIO = "tri_gauss_twice"
+NUM_DATA_POINTS = 2000
+OT_BATCH_SIZES = [100, 500, 1000, 2000]
+DIMS = [2, 4, 8, 16, 32]
+ITERATIONS = 3
 
-def compute_transport_cost(x0, x1) -> torch.Tensor:
+PLOTS_OUTPUT_DIR = Path("src/thesis/output/plots")
+TABLES_OUTPUT_DIR = Path("src/thesis/output/tables")
+
+
+def compute_transport_cost(x0: torch.Tensor, x1: torch.Tensor) -> torch.Tensor:
     return ((x0 - x1) ** 2).sum(dim=1).mean()
 
-def get_distributions2(dist, dim):
-    zeros = (dim - 2) * [0]
-    means_x0 = [zeros + [-dist, -2], zeros + [-dist, 2]]
-    means_x1 = [zeros + [dist, -2], zeros + [dist, 2]]
-    variances = 0.1
-    return GaussianMixtureDistribution(means_x0, variances, DEVICE), GaussianMixtureDistribution(means_x1, variances, DEVICE)
 
-########################################################################################################################
-
-SCENARIO = "tri_gauss_twice"
-SIZE_TRAIN_SET = 2000
-OT_BATCH_SIZE = 2000
-
-def get_distributions(dim):
+def get_distributions(dim: int):
     return get_scenario(SCENARIO, dim, DEVICE)
 
-dims = [2, 512]
-#dims = [3, 4, 5, 6, 16, 64, 256, 1024]
-plot_tensors = False
 
-for dim in dims:
+def estimate_squared_w2(dim: int, ot_batch_size: int) -> float:
     gmd_x0, gmd_x1, _ = get_distributions(dim)
-    x0_sample = gmd_x0.sample(SIZE_TRAIN_SET)
-    x1_sample = gmd_x1.sample(SIZE_TRAIN_SET)
+    x0_sample = gmd_x0.sample(NUM_DATA_POINTS)
+    x1_sample = gmd_x1.sample(NUM_DATA_POINTS)
+
     coupler = Coupler(x0_sample, x1_sample)
     coupling = coupler.get_independent_coupling()
-
-    loader = DataLoader(
-        coupling,
-        OT_BATCH_SIZE,
-        shuffle=True,
-    )
+    loader = DataLoader(coupling, ot_batch_size, shuffle=True)
 
     tensor_list_x0 = []
     tensor_list_x1 = []
@@ -53,7 +47,6 @@ for dim in dims:
         batch_size = x_1.shape[0]
         coupler_ot = Coupler(x_0, x_1)
         coupling_ot = coupler_ot.get_n_ot_coupling(batch_size, TensorCost.quadratic_cost)
-        #coupling_ot = coupler_ot.get_independent_coupling()
         tensor_list_x0.append(coupling_ot.x0)
         tensor_list_x1.append(coupling_ot.x1)
 
@@ -61,48 +54,59 @@ for dim in dims:
     x1 = torch.cat(tensor_list_x1, dim=0)
 
     perm = torch.randperm(len(x0))
-    x0_coupled = x0[perm]
-    x1_coupled = x1[perm]
+    w2_sq = compute_transport_cost(x0[perm], x1[perm])
+    return float(w2_sq.item())
 
-    w2_sq = compute_transport_cost(x0_coupled, x1_coupled)
-    print("dim: {}, w2sq: {}".format(dim, w2_sq.item()))
 
-    # plot tensors if required
-    if plot_tensors and dim == 2:
-        plot_tensor_2d(x0_sample)
-        plot_tensor_2d(x1_sample)
-    if plot_tensors and dim == 3:
-        plot_tensor_3d(x0_sample)
-        plot_tensor_3d(x1_sample)
+def main() -> None:
+    timestamp = make_timestamp()
 
-'''
- dim: 3, w2sq: 16.345882415771484
-dim: 16, w2sq: 17.74319839477539
-dim: 64, w2sq: 25.32668685913086
-dim: 256, w2sq: 59.77362823486328
-dim: 1024, w2sq: 205.46359252929688
-'''
+    results = defaultdict(lambda: defaultdict(list))
 
-'''
-n = 100
-dim: 3, w2sq: 16.700428009033203
-dim: 4, w2sq: 16.04098129272461
-dim: 5, w2sq: 16.764467239379883
-dim: 6, w2sq: 16.50218391418457
-dim: 16, w2sq: 18.555356979370117
-dim: 64, w2sq: 25.738603591918945
-dim: 256, w2sq: 60.26057434082031
-dim: 1024, w2sq: 207.70257568359375
-'''
+    for run_idx in range(ITERATIONS):
+        print(f"Run {run_idx + 1}/{ITERATIONS}")
+        run_curves = defaultdict(list)
 
-'''
-n = 100.000
-dim: 3, w2sq: 16.33283805847168
-dim: 4, w2sq: 16.388051986694336
-dim: 5, w2sq: 16.505903244018555
-dim: 6, w2sq: 16.567005157470703
-dim: 16, w2sq: 17.71809196472168
-dim: 64, w2sq: 25.31012725830078
-dim: 256, w2sq: 59.73411178588867
-dim: 1024, w2sq: 205.5005645751953
-'''
+        for ot_batch_size in OT_BATCH_SIZES:
+            for dim in DIMS:
+                w2_sq = estimate_squared_w2(dim=dim, ot_batch_size=ot_batch_size)
+                results[ot_batch_size][dim].append(w2_sq)
+                run_curves[ot_batch_size].append(w2_sq)
+                print(f"k={ot_batch_size}, dim={dim}, w2sq={w2_sq:.6f}")
+
+        plot_path = save_w2_plot(
+            output_dir=PLOTS_OUTPUT_DIR,
+            scenario_name=SCENARIO,
+            timestamp=timestamp,
+            run_idx=run_idx,
+            dims=DIMS,
+            values_by_ot_batch_size=dict(run_curves),
+        )
+        print(f"Saved plot: {plot_path}")
+
+    mean_std_matrix = {}
+    for ot_batch_size in OT_BATCH_SIZES:
+        mean_std_matrix[ot_batch_size] = {}
+        for dim in DIMS:
+            values = torch.tensor(results[ot_batch_size][dim])
+            mean_std_matrix[ot_batch_size][dim] = (
+                float(values.mean().item()),
+                float(values.std(unbiased=False).item()),
+            )
+
+    latex_content = build_w2_latex_table(
+        dims=DIMS,
+        ot_batch_sizes=OT_BATCH_SIZES,
+        mean_std_matrix=mean_std_matrix,
+    )
+    table_path = save_w2_latex_table(
+        output_dir=TABLES_OUTPUT_DIR,
+        scenario_name=SCENARIO,
+        timestamp=timestamp,
+        latex_content=latex_content,
+    )
+    print(f"Saved table: {table_path}")
+
+
+if __name__ == "__main__":
+    main()
