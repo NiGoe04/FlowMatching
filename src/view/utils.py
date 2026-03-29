@@ -56,7 +56,7 @@ def save_w2_plot(
     return file_path
 
 
-def _decimal_places(x: float) -> int:
+def decimal_places(x: float) -> int:
     s = f"{x:.10g}"  # avoid floating point artifacts
     if "." in s:
         return len(s.split(".")[1])
@@ -92,7 +92,7 @@ def build_w2_latex_table(
             mean_val, std_val = mean_std_matrix[k][d]
 
             std_rounded = round_to_significant_digit(std_val, significant_digits=1)
-            decimals = _decimal_places(std_rounded)
+            decimals = decimal_places(std_rounded)
 
             mean_rounded = round(mean_val, decimals)
             row_values.append(
