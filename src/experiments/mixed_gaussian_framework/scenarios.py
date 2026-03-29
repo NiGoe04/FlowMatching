@@ -426,7 +426,7 @@ def _build_scenario_centers_and_w2_sq(
     if name == "gaussian_circles":
         x0_means = [_embed_2d_center_last(dim, m) for m in base_means_gaussian_circles["x0"]]
         x1_means = [_embed_2d_center_last(dim, m) for m in base_means_gaussian_circles["x1"]]
-        w2_sq_pre_calc = 72.0
+        w2_sq_pre_calc = 36.0
         return x0_means, x1_means, w2_sq_pre_calc
 
     if name == "gaussian_circles_ftd":
@@ -466,7 +466,7 @@ def _build_scenario_centers_and_w2_sq(
     if name == "tri_gauss_twice":
         x0_means = [_embed_2d_center_last(dim, m) for m in base_means_tri_gauss_twice["x0"]]
         x1_means = [_embed_2d_center_last(dim, m) for m in base_means_tri_gauss_twice["x1"]]
-        w2_sq_pre_calc = 0.0
+        w2_sq_pre_calc = 64.0
         return x0_means, x1_means, w2_sq_pre_calc
 
     if name == "4_to_4_gauss":

@@ -17,13 +17,14 @@ from src.view.utils import ensure_dir, make_timestamp
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-TRAIN_VANILLA_FOR_COMPARISON = True
+TRAIN_VANILLA_FOR_COMPARISON = False
 SAVE_LOSS_PLOTS = True
 SAVE_METRICS_PLOTS = True
-ITERATIONS = 6
+SAVE_METRICS_TABLES = True
+ITERATIONS = 3
 
-SCENARIOS = ["4_to_4_gauss"]
-DIMS = [2, 1024]
+SCENARIOS = ["gaussian_circles"]
+DIMS = [3, 1024]
 OT_BATCH_SIZES = [256]
 OT_OPTIMIZERS = ["hungarian"]
 
@@ -34,7 +35,7 @@ PARAMS_EXP = {
     "num_epochs": 10,
     "learning_rate": 1.8e-3,
     "size_train_set": 80000,
-    "amount_samples": 5000,
+    "amount_samples": 1000,
     "num_trainer_val_samples": 5000,
 }
 
@@ -464,9 +465,10 @@ def run() -> str:
         for path in saved_metric_plot_paths:
             print(f"Saved metrics plot: {path}")
 
-    saved_table_paths = _save_metrics_tables(metrics_by_group, timestamp)
-    for path in saved_table_paths:
-        print(f"Saved table: {path}")
+    if SAVE_METRICS_TABLES:
+        saved_table_paths = _save_metrics_tables(metrics_by_group, timestamp)
+        for path in saved_table_paths:
+            print(f"Saved table: {path}")
 
     reports_dir = os.path.join(FRAMEWORK_DIR, "reports")
     return create_experiment_report(all_results, reports_dir)
