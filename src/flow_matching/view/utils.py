@@ -121,6 +121,76 @@ def visualize_mnist_samples(tensor: torch.Tensor, n_samples: int = 16, title: st
     plt.tight_layout()
     plt.show()
 
+
+def visualize_rgb_samples(
+    tensor: torch.Tensor,
+    start_idx: int,
+    end_idx: int,
+    title: str = "RGB samples",
+):
+    """
+    Displays RGB images from a tensor of shape [N, 3, H, W] for indices in [start_idx, end_idx].
+    """
+    if tensor.ndim != 4 or tensor.shape[1] != 3:
+        raise ValueError(f"Expected tensor with shape [N, 3, H, W], got {tuple(tensor.shape)}")
+    if start_idx < 0 or end_idx < start_idx or end_idx >= tensor.shape[0]:
+        raise ValueError(
+            f"Invalid range [{start_idx}, {end_idx}] for dataset of size {tensor.shape[0]}"
+        )
+
+    num_samples = end_idx - start_idx + 1
+    n_cols = int(np.ceil(np.sqrt(num_samples)))
+    n_rows = int(np.ceil(num_samples / n_cols))
+
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols * 2.5, n_rows * 2.5))
+    axes = np.array(axes).reshape(-1)
+
+    for plot_idx, sample_idx in enumerate(range(start_idx, end_idx + 1)):
+        img = tensor[sample_idx].detach().cpu()
+        img = img - img.min()
+        img = img / (img.max() + 1e-8)
+        axes[plot_idx].imshow(img.permute(1, 2, 0).numpy())
+        axes[plot_idx].set_title(str(sample_idx))
+        axes[plot_idx].axis("off")
+
+    for plot_idx in range(num_samples, len(axes)):
+        axes[plot_idx].axis("off")
+
+    plt.suptitle(title)
+    plt.tight_layout()
+    plt.show()
+
+
+def visualize_rgb_trajectories(
+    tensors: Sequence[torch.Tensor],
+    time_grid: torch.Tensor,
+    sample_indices: Sequence[int],
+):
+    """
+    Visualize selected RGB samples over time as a static panel.
+    Rows correspond to samples, columns to time points.
+    """
+    if len(tensors) != len(time_grid):
+        raise ValueError("Number of tensors must match number of time values.")
+
+    num_rows = len(sample_indices)
+    num_cols = len(tensors)
+    fig, axes = plt.subplots(num_rows, num_cols, figsize=(2.2 * num_cols, 2.2 * num_rows))
+    axes = np.array(axes).reshape(num_rows, num_cols)
+
+    for row, sample_idx in enumerate(sample_indices):
+        for col, x_t in enumerate(tensors):
+            img = x_t[sample_idx].detach().cpu()
+            img = img - img.min()
+            img = img / (img.max() + 1e-8)
+            axes[row, col].imshow(img.permute(1, 2, 0).numpy())
+            axes[row, col].axis("off")
+            if row == 0:
+                axes[row, col].set_title(f"t={time_grid[col].item():.2f}")
+
+    plt.tight_layout()
+    plt.show()
+
 def visualize_multi_slider_ndim(tensors: Sequence[torch.Tensor],
                                 time_grid: torch.Tensor,
                                 bounds: Optional[Sequence[float]] = None):

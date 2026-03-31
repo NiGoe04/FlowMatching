@@ -104,7 +104,7 @@ class DecoderBlockBottleneck(nn.Module):
         return x
 
 class DecoderBlockFinal(nn.Module):
-    def __init__(self, in_channels, dropout_rate, apply_sigmoid):
+    def __init__(self, in_channels, dropout_rate, apply_sigmoid, final_channels=FINAL_CHANNELS):
         super().__init__()
         in_chan_skip = 2 * in_channels
         self.apply_sigmoid = apply_sigmoid
@@ -113,7 +113,7 @@ class DecoderBlockFinal(nn.Module):
         self.conv2 = nn.Conv2d(in_channels, in_channels, kernel_size=KERNEL_SIZE_CONV, padding=PADDING)
         self.bn2 = nn.BatchNorm2d(in_channels)
         self.dropout = nn.Dropout2d(dropout_rate)
-        self.final_conv = nn.Conv2d(in_channels, FINAL_CHANNELS, kernel_size=KERNEL_SIZE_FINAL)
+        self.final_conv = nn.Conv2d(in_channels, final_channels, kernel_size=KERNEL_SIZE_FINAL)
 
     def forward(self, x, skip_connection):
         x = torch.cat([x, skip_connection], dim=1)
