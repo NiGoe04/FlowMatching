@@ -10,7 +10,7 @@ from src.flow_matching.view.utils import visualize_rgb_samples
 # ============================================================
 
 PART = 1        # 1..10
-DIM = 64      # 8, 16, 32, 64
+DIM = 32      # 8, 16, 32, 64
 START = 0       # inclusive
 END = 15        # inclusive
 

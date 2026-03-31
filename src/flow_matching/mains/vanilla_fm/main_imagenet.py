@@ -6,8 +6,10 @@ from flow_matching.path.scheduler import CondOTScheduler
 from flow_matching.solver import ODESolver
 from torch.utils.data import DataLoader
 
+from src.experiments.imagenet_framework.utils import load_imagenet_scenario_validation_data
 from src.flow_matching.controller.cond_trainer import CondTrainer
 from src.flow_matching.controller.lr_finder import LRFinder
+from src.flow_matching.controller.metrics import Metrics
 from src.flow_matching.controller.utils import (
     store_model,
     get_imagenet_unet_model,
@@ -20,10 +22,11 @@ from src.flow_matching.view.utils import visualize_rgb_samples, visualize_rgb_tr
 
 # steering console
 DIM = 16  # supported by dataset files: 8, 16, 32, 64
-FIND_LR = True
-TRAIN_MODEL = True
-SAVE_MODEL = True
+FIND_LR = False
+TRAIN_MODEL = False
+SAVE_MODEL = False
 GENERATE_SAMPLES = True
+EVAL_METRICS = True
 VISUALIZE_TIME = True
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -31,16 +34,16 @@ MODEL_SAVE_PATH = "../../../../models"
 
 # hyperparams
 PARAMS = {
-    "num_epochs": 8,
+    "num_epochs": 12,
     "batch_size": 64,
     "dropout_rate_model": 0.0,
-    "learning_rate": 2.5e-3,
-    "size_train_set": 60000,
+    "learning_rate": 2e-3,
+    "size_train_set": 80000,
     "num_trainer_val_samples": 1000,
     "amount_samples": 8,
-    "solver_steps": 100,
+    "solver_steps": 256,
     "num_times_to_visualize": 9,
-    "t_end": 1.05,
+    "t_end": 1.0,
     "solver_method": "midpoint",
 }
 
@@ -63,7 +66,7 @@ path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
 trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], PARAMS["num_trainer_val_samples"], device=DEVICE)
 
-model_path = os.path.join(MODEL_SAVE_PATH, "model_IMAGENET_32_example.pth")
+model_path = os.path.join(MODEL_SAVE_PATH, "model_IMAGENET_16_2026-03-31_15-32-45.pth")
 
 
 if FIND_LR:
@@ -93,6 +96,13 @@ if GENERATE_SAMPLES:
         time_grid=torch.Tensor([0.0, PARAMS["t_end"]]).to(DEVICE),
     )
     visualize_rgb_samples(x_1_sample, 0, PARAMS["amount_samples"] - 1)
+
+    if EVAL_METRICS:
+        validation_images = load_imagenet_scenario_validation_data(DIM, DEVICE)
+        real_eval = validation_images[:PARAMS["amount_samples"]].to(DEVICE)
+        fid = Metrics.calculate_fid(real_eval, x_1_sample)
+        inception_score, _ = Metrics.calculate_inception_score(x_1_sample)
+        print(f"FID: {fid.item()}, Inception Score: {inception_score.item()}")
 
 if VISUALIZE_TIME:
     model = load_model_unet_imagenet(

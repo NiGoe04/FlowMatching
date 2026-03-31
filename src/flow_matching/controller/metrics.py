@@ -20,10 +20,11 @@ class Metrics:
             images = images.repeat(1, 3, 1, 1)
         if images.shape[1] != 3:
             raise ValueError(f"Expected 1 or 3 channels, got {images.shape[1]}")
+
         images = images.float()
-        images = images - images.amin(dim=(1, 2, 3), keepdim=True)
-        images = images / (images.amax(dim=(1, 2, 3), keepdim=True) + 1e-8)
-        return (images * 255.0).to(torch.uint8)
+        # clamp only to ensure valid range
+        images = images.clamp(0.0, 1.0)
+        return (images * 255.0).round().to(torch.uint8)
 
     @staticmethod
     def calculate_fid(real_images: torch.Tensor, generated_images: torch.Tensor, batch_size: int = 64) -> torch.Tensor:

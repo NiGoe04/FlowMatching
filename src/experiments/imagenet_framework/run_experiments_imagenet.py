@@ -22,6 +22,7 @@ from src.flow_matching.controller.utils import load_model_unet_imagenet
 from src.view.utils import decimal_places, ensure_dir, make_timestamp, round_to_significant_digit
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DUMMY_W2SQ_PRECALCULATED = 10.0
 
 SAVE_LOSS_PLOTS = True
 SAVE_METRICS_PLOTS = True
@@ -36,13 +37,13 @@ SINKHORN_EPSILONS = [0.01, 0.1]
 
 PARAMS_EXP = {
     "num_epochs": 10,
-    "learning_rate": 2.5e-3,
+    "learning_rate": 2e-3,
     "dropout_rate_model": 0.0,
     "size_train_set": 40000,
     "amount_samples": 1000,
     "amount_samples_fid_is": 1000,
     "num_trainer_val_samples": 1000,
-    "solver_steps": 100,
+    "solver_steps": 256,
     "t_end": 1.0,
 }
 
@@ -84,7 +85,8 @@ def _compute_metrics(model, validation_images: torch.Tensor, dim: int) -> dict[s
     x0_eval = torch.randn_like(x1_eval, device=DEVICE)
 
     straightness = Metrics.calculate_path_straightness(model, x0_eval)
-    pe, _, npe = Metrics.calculate_normalized_path_energy(model, x0_eval, x1_eval)
+    pe, _, npe = Metrics.calculate_normalized_path_energy(model, x0_eval, x1_eval,
+                                                          w2_sq_pre_calc=DUMMY_W2SQ_PRECALCULATED)
 
     generated = sample_model_images(
         model=model,
