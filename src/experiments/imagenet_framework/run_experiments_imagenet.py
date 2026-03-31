@@ -14,6 +14,7 @@ from src.experiments.imagenet_framework.utils import (
     TABLES_DIR,
     REPORTS_DIR,
     load_imagenet_scenario_data,
+    load_imagenet_scenario_validation_data,
     sample_model_images,
 )
 from src.flow_matching.controller.metrics import Metrics
@@ -39,6 +40,7 @@ PARAMS_EXP = {
     "dropout_rate_model": 0.0,
     "size_train_set": 40000,
     "amount_samples": 1000,
+    "amount_samples_fid_is": 1000,
     "num_trainer_val_samples": 1000,
     "solver_steps": 100,
     "t_end": 1.0,
@@ -75,9 +77,10 @@ def _mean_and_unbiased_std(values: list[float]) -> tuple[float, float]:
     return mean_val, float(tensor.std(unbiased=True).item())
 
 
-def _compute_metrics(model, real_images: torch.Tensor, dim: int) -> dict[str, float]:
+def _compute_metrics(model, validation_images: torch.Tensor, dim: int) -> dict[str, float]:
     amount_samples = int(PARAMS_EXP["amount_samples"])
-    x1_eval = real_images[:amount_samples].to(DEVICE)
+    amount_samples_fid_is = int(PARAMS_EXP["amount_samples_fid_is"])
+    x1_eval = validation_images[:amount_samples].to(DEVICE)
     x0_eval = torch.randn_like(x1_eval, device=DEVICE)
 
     straightness = Metrics.calculate_path_straightness(model, x0_eval)
@@ -86,12 +89,12 @@ def _compute_metrics(model, real_images: torch.Tensor, dim: int) -> dict[str, fl
     generated = sample_model_images(
         model=model,
         dim=dim,
-        amount_samples=amount_samples,
+        amount_samples=amount_samples_fid_is,
         solver_steps=int(PARAMS_EXP["solver_steps"]),
         t_end=float(PARAMS_EXP["t_end"]),
         device=DEVICE,
     )
-    real_eval = real_images[:amount_samples].to(DEVICE)
+    real_eval = validation_images[:amount_samples_fid_is].to(DEVICE)
     fid = Metrics.calculate_fid(real_eval, generated)
     inception_score, _ = Metrics.calculate_inception_score(generated)
 
@@ -221,8 +224,9 @@ def run() -> str:
 
     for dim, ot_batch_size, (ot_optimizer, epsilon) in itertools.product(DIMS, OT_BATCH_SIZES, _optimizer_and_epsilon_grid()):
         print(f"[SCENARIO] imagenet_{dim} | k={ot_batch_size} | opt={ot_optimizer} | eps={epsilon}")
-        real_images = load_imagenet_scenario_data(dim, int(PARAMS_EXP["size_train_set"]), DEVICE)
-        x1_train = real_images
+        train_images = load_imagenet_scenario_data(dim, int(PARAMS_EXP["size_train_set"]), DEVICE)
+        validation_images = load_imagenet_scenario_validation_data(dim, DEVICE)
+        x1_train = train_images
         x0_train = torch.randn_like(x1_train, device=DEVICE)
 
         model_path, train_losses, val_losses, trained = train_or_get_model(
@@ -247,7 +251,7 @@ def run() -> str:
             device=DEVICE,
         )
         for _ in range(ITERATIONS):
-            vals = _compute_metrics(model, real_images, dim)
+            vals = _compute_metrics(model, validation_images, dim)
             for metric_name, metric_value in vals.items():
                 metrics_by_group[(dim, ot_batch_size)][metric_name].append(metric_value)
 
