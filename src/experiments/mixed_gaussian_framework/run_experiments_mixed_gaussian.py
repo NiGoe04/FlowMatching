@@ -21,23 +21,23 @@ TRAIN_VANILLA_FOR_COMPARISON = False
 SAVE_LOSS_PLOTS = True
 SAVE_METRICS_PLOTS = True
 SAVE_METRICS_TABLES = True
-ITERATIONS = 3
-LOG2_DIM_AXIS = False
+ITERATIONS = 5
+LOG2_DIM_AXIS = True
 
-SCENARIOS = ["gaussian_circles"]
-DIMS = [3, 1024]
-OT_BATCH_SIZES = [256]
+SCENARIOS = ["tri_gauss_twice_ftd"]
+DIMS = [3, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+OT_BATCH_SIZES = [1, 32, 64, 128, 256, 512]
 OT_OPTIMIZERS = ["hungarian"]
 
 # Optional epsilon values are only used if a sinkhorn optimizer is configured.
 SINKHORN_EPSILONS = [0.01, 0.1]
 
-PARAMS_EXP = {
-    "num_epochs": 10,
-    "learning_rate": 1.8e-3,
-    "size_train_set": 80000,
-    "amount_samples": 1000,
-    "num_trainer_val_samples": 5000,
+PARAMS_EXP = { # DO NOT CHANGE ANYMORE!!!
+    "num_epochs": 10,     # DO NOT CHANGE ANYMORE!!!
+    "learning_rate": 1.8e-3,    # DO NOT CHANGE ANYMORE!!!
+    "size_train_set": 80000,    # DO NOT CHANGE ANYMORE!!!
+    "amount_samples": 1000,    # DO NOT CHANGE ANYMORE!!!
+    "num_trainer_val_samples": 1000,    # DO NOT CHANGE ANYMORE!!!
 }
 
 FRAMEWORK_DIR = Path(__file__).resolve().parent
@@ -145,7 +145,7 @@ def _save_loss_plots_by_dimension(
             ax.set_xlabel("Epoch")
             ax.set_ylabel("Loss")
             title_kind = "training" if loss_kind == "train" else "validation"
-            ax.set_title(f"{scenario_name} | k={ot_batch_size} | {title_kind} loss")
+            #ax.set_title(f"{scenario_name} | k={ot_batch_size} | {title_kind} loss")
             ax.legend()
             ax.grid(alpha=0.2)
 

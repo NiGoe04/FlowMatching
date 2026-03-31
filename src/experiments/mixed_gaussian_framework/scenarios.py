@@ -98,7 +98,8 @@ SCENARIO_NAMES = [
     "gaussian_mix_diff_var_3",
     "4_to_2_gauss",
     "4_to_4_gauss",
-    "tri_gauss_twice"
+    "tri_gauss_twice",
+    "tri_gauss_twice_ftd"
 ]
 
 
@@ -145,7 +146,7 @@ def _calculate_normalized_centers_ftd_gaussian_circles(dim: int) -> tuple[list[l
     """
     Full-transport-dimension (normalized) version:
     - keep the original 2D circle points in the LAST two dims
-    - shift the first (dim-2) dims from -a to +a such that ||delta|| = 4
+    - shift the first (dim-2) dims from -a to +a such that ||delta|| = 6
     """
     if dim < 2:
         raise ValueError("dim must be >= 2")
@@ -163,6 +164,31 @@ def _calculate_normalized_centers_ftd_gaussian_circles(dim: int) -> tuple[list[l
 
     x0_means = [x0_prefix + [float(x), float(y)] for x, y in base_means_gaussian_circles["x0"]]
     x1_means = [x1_prefix + [float(x), float(y)] for x, y in base_means_gaussian_circles["x1"]]
+    return x0_means, x1_means
+
+
+def _calculate_normalized_centers_ftd_tri_gauss_twice(dim: int) -> tuple[list[list[float]], list[list[float]]]:
+    """
+    Full-transport-dimension (normalized) version:
+    - keep the original 2D circle points in the LAST two dims
+    - shift the first (dim-2) dims from -a to +a such that ||delta|| = 6
+    """
+    if dim < 2:
+        raise ValueError("dim must be >= 2")
+
+    transport_dims = dim - 2
+    if transport_dims <= 0:
+        x0_means = [_embed_2d_center_last(dim, m) for m in base_means_tri_gauss_twice["x0"]]
+        x1_means = [_embed_2d_center_last(dim, m) for m in base_means_tri_gauss_twice["x1"]]
+        return x0_means, x1_means
+
+    delta = 8.0 / math.sqrt(transport_dims)
+    a = delta / 2.0
+    x0_prefix = [-a] * transport_dims
+    x1_prefix = [a] * transport_dims
+
+    x0_means = [x0_prefix + [float(x), float(y)] for x, y in base_means_tri_gauss_twice["x0"]]
+    x1_means = [x1_prefix + [float(x), float(y)] for x, y in base_means_tri_gauss_twice["x1"]]
     return x0_means, x1_means
 
 
@@ -432,7 +458,7 @@ def _build_scenario_centers_and_w2_sq(
     if name == "gaussian_circles_ftd":
         x0_means, x1_means = _calculate_normalized_centers_ftd_gaussian_circles(dim)
         # this is what you had before; keep it as the known pre-calc for that construction
-        w2_sq_pre_calc = 32.0
+        w2_sq_pre_calc = 72.0
         return x0_means, x1_means, w2_sq_pre_calc
 
     if name == "gaussian_circles_uftd":
@@ -467,6 +493,11 @@ def _build_scenario_centers_and_w2_sq(
         x0_means = [_embed_2d_center_last(dim, m) for m in base_means_tri_gauss_twice["x0"]]
         x1_means = [_embed_2d_center_last(dim, m) for m in base_means_tri_gauss_twice["x1"]]
         w2_sq_pre_calc = 64.0
+        return x0_means, x1_means, w2_sq_pre_calc
+
+    if name == "tri_gauss_twice_ftd":
+        x0_means, x1_means = _calculate_normalized_centers_ftd_tri_gauss_twice(dim)
+        w2_sq_pre_calc = 128.0
         return x0_means, x1_means, w2_sq_pre_calc
 
     if name == "4_to_4_gauss":
@@ -515,6 +546,9 @@ def get_scenario(
         x0_variance = variances_4_to_2_gauss["x0"]
         x1_variance = variances_4_to_2_gauss["x1"]
     elif scenario_name == "tri_gauss_twice":
+        x0_variance = variances_tri_gauss_twice["x0"]
+        x1_variance = variances_tri_gauss_twice["x1"]
+    elif scenario_name == "tri_gauss_twice_ftd":
         x0_variance = variances_tri_gauss_twice["x0"]
         x1_variance = variances_tri_gauss_twice["x1"]
     elif scenario_name == "4_to_4_gauss":

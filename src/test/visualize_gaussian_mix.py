@@ -5,7 +5,7 @@ from src.flow_matching.controller.metrics import Metrics
 from src.flow_matching.view.utils import plot_tensor_2d, plot_tensor_3d
 
 
-SCENARIO = "4_to_2_gauss"
+SCENARIO = "tri_gauss_twice_ftd"
 N_SAMPLES = 1000
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -38,10 +38,14 @@ def main():
     )
     w2_sq = Metrics.estimate_w2_sq(x0_sample, x1_sample)
     print("dim: {}, w2sq: {}".format(3, w2_sq.item()))
-
-    points_4d, x0_sample, x1_sample = _sample_combined(dim=3)
-    w2_sq = Metrics.estimate_w2_sq(x0_sample, x1_sample)
-    print("dim: {}, w2sq: {}".format(4, w2_sq.item()))
+    dims = [4, 5, 8, 12, 20]
+    for dim in dims:
+        points_nd, x0_sample, x1_sample = _sample_combined(dim=dim)
+        #print(x0_sample)
+        print(f"sample of dim {dim}")
+        print(x1_sample[0])
+        w2_sq = Metrics.estimate_w2_sq(x0_sample, x1_sample)
+        print("dim: {}, w2sq: {}".format(dim, w2_sq.item()))
 
 
 if __name__ == "__main__":

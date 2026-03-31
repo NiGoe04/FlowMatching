@@ -12,10 +12,11 @@ from src.view.utils import build_w2_latex_table, make_timestamp, save_w2_latex_t
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-SCENARIO = "gaussian_circles"
-NUM_DATA_POINTS = [100, 500, 1000, 2000]
-DIMS = [3, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
-ITERATIONS = 6
+SCENARIO = "tri_gauss_twice_ftd"
+NUM_DATA_POINTS = [2000] #[100, 500, 1000, 2000]
+DIMS = [2, 3, 8, 16, 32, 1024] #[3, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+ITERATIONS = 1
+SAVE_RESULTS = False
 LOG2_DIM_AXIS = True
 
 PLOTS_OUTPUT_DIR = Path("output/v2/plots")
@@ -63,16 +64,17 @@ def main() -> None:
             values = torch.tensor(results[num_data_points][dim])
             mean_curves[num_data_points].append(float(values.mean().item()))
 
-    plot_path = save_w2_plot(
-        output_dir=PLOTS_OUTPUT_DIR,
-        scenario_name=SCENARIO,
-        timestamp=timestamp,
-        dims=DIMS,
-        values_by_ot_batch_size=mean_curves,
-        log2_dim_axis=LOG2_DIM_AXIS,
-        use_num_data_points_symbol=True,
-    )
-    print(f"Saved plot: {plot_path}")
+    if SAVE_RESULTS:
+        plot_path = save_w2_plot(
+            output_dir=PLOTS_OUTPUT_DIR,
+            scenario_name=SCENARIO,
+            timestamp=timestamp,
+            dims=DIMS,
+            values_by_ot_batch_size=mean_curves,
+            log2_dim_axis=LOG2_DIM_AXIS,
+            use_num_data_points_symbol=True,
+        )
+        print(f"Saved plot: {plot_path}")
 
     mean_std_matrix = {}
     for num_data_points in NUM_DATA_POINTS:
@@ -84,19 +86,20 @@ def main() -> None:
                 float(values.std(unbiased=True).item()),
             )
 
-    latex_content = build_w2_latex_table(
-        dims=DIMS,
-        ot_batch_sizes=NUM_DATA_POINTS,
-        mean_std_matrix=mean_std_matrix,
-        use_num_data_points_symbol=True,
-    )
-    table_path = save_w2_latex_table(
-        output_dir=TABLES_OUTPUT_DIR,
-        scenario_name=SCENARIO,
-        timestamp=timestamp,
-        latex_content=latex_content,
-    )
-    print(f"Saved table: {table_path}")
+    if SAVE_RESULTS:
+        latex_content = build_w2_latex_table(
+            dims=DIMS,
+            ot_batch_sizes=NUM_DATA_POINTS,
+            mean_std_matrix=mean_std_matrix,
+            use_num_data_points_symbol=True,
+        )
+        table_path = save_w2_latex_table(
+            output_dir=TABLES_OUTPUT_DIR,
+            scenario_name=SCENARIO,
+            timestamp=timestamp,
+            latex_content=latex_content,
+        )
+        print(f"Saved table: {table_path}")
 
 
 if __name__ == "__main__":

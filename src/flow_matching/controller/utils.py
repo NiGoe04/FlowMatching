@@ -5,6 +5,7 @@ from typing import Tuple
 import torch
 from torch import Tensor
 from torchvision import datasets, transforms
+import pickle
 
 from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
 from src.flow_matching.model.velocity_model_unet import UnetVelocityModel
@@ -198,4 +199,10 @@ def get_velocity_field_tensor_3d(time_range: Tuple, num_times, bounds, density, 
             tensor[t_idx] = v
 
     return tensor
+
+
+def unpickle(file):
+    with open(file, 'rb') as fo:
+        d = pickle.load(fo)
+    return d
 

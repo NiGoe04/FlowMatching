@@ -13,7 +13,7 @@ from src.view.utils import build_w2_latex_table, make_timestamp, save_w2_latex_t
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-SCENARIO = "gaussian_circles"
+SCENARIO = "gaussian_circles_ftd"
 NUM_DATA_POINTS = 80000
 OT_BATCH_SIZES = [1, 32, 64, 128, 256, 512]
 DIMS = [3, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
