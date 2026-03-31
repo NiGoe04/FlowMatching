@@ -254,11 +254,11 @@ def load_imagenet_databatch(data_folder: str, idx: int, img_size: int) -> Tensor
 
     d = unpickle(data_file)
     x = d["data"].astype(np.float32)
-    mean_image = d["mean"].astype(np.float32)
+    # mean_image = d["mean"].astype(np.float32)
 
     x = x / np.float32(255.0)
-    mean_image = mean_image / np.float32(255.0)
-    x -= mean_image
+    # mean_image = mean_image / np.float32(255.0)
+    # x -= mean_image
 
     img_size2 = img_size * img_size
     x = np.dstack((x[:, :img_size2], x[:, img_size2:2 * img_size2], x[:, 2 * img_size2:]))
@@ -342,11 +342,11 @@ def load_imagenet_validation_tensor(
 
     d = unpickle(data_file)
     x = d["data"].astype(np.float32)
-    mean_image = d["mean"].astype(np.float32)
+    # mean_image = d["mean"].astype(np.float32)
 
     x = x / np.float32(255.0)
-    mean_image = mean_image / np.float32(255.0)
-    x -= mean_image
+    # mean_image = mean_image / np.float32(255.0)
+    # x -= mean_image
 
     img_size2 = img_size * img_size
     x = np.dstack((x[:, :img_size2], x[:, img_size2:2 * img_size2], x[:, 2 * img_size2:]))
