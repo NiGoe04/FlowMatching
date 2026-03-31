@@ -19,11 +19,11 @@ from src.flow_matching.model.losses import ConditionalFMLoss
 from src.flow_matching.view.utils import visualize_rgb_samples, visualize_rgb_trajectories
 
 # steering console
-DIM = 32  # supported by dataset files: 8, 16, 32, 64
-FIND_LR = False
-TRAIN_MODEL = False
-SAVE_MODEL = False
-GENERATE_SAMPLES = False
+DIM = 16  # supported by dataset files: 8, 16, 32, 64
+FIND_LR = True
+TRAIN_MODEL = True
+SAVE_MODEL = True
+GENERATE_SAMPLES = True
 VISUALIZE_TIME = True
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -31,21 +31,22 @@ MODEL_SAVE_PATH = "../../../../models"
 
 # hyperparams
 PARAMS = {
-    "num_epochs": 15,
+    "num_epochs": 8,
     "batch_size": 64,
     "dropout_rate_model": 0.0,
-    "learning_rate": 1e-3,
-    "size_train_set": 20000,
+    "learning_rate": 2.5e-3,
+    "size_train_set": 60000,
     "num_trainer_val_samples": 1000,
     "amount_samples": 8,
     "solver_steps": 100,
-    "num_times_to_visualize": 6,
+    "num_times_to_visualize": 9,
     "t_end": 1.05,
     "solver_method": "midpoint",
 }
 
 # data
-x_1_train = load_imagenet_training_tensor(img_size=DIM, device=DEVICE)
+x_1_train = load_imagenet_training_tensor(img_size=DIM, device=DEVICE, num_parts=1)
+print(f"Training data shape: {x_1_train.shape}")
 if PARAMS["size_train_set"] < x_1_train.shape[0]:
     x_1_train = x_1_train[: PARAMS["size_train_set"]]
 

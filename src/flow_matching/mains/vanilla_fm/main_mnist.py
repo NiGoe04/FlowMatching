@@ -52,6 +52,8 @@ loader = DataLoader(
 
 # model
 model = UnetVelocityModel(dropout_rate=PARAMS["dropout_rate_model"], device=DEVICE)
+num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+print(f"Num params: {num_params}")
 path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
 trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], PARAMS["num_trainer_val_samples"], device=DEVICE)

@@ -30,9 +30,9 @@ class UnetVelocityFieldImageNet8(_ImageNetUnetBase):
         super().__init__()
         in_channels = INPUT_CHANNELS + TIME_CHANNELS
 
-        self.enc_bottleneck = EncoderBlockBottleneck(in_channels, 16, dropout_rate)
+        self.enc_bottleneck = EncoderBlockBottleneck(in_channels, 32, dropout_rate)
         self.dec_final = DecoderBlockFinal(
-            in_channels=16,
+            in_channels=32,
             dropout_rate=dropout_rate,
             apply_sigmoid=False,
             final_channels=FINAL_CHANNELS,
@@ -50,12 +50,12 @@ class UnetVelocityFieldImageNet16(_ImageNetUnetBase):
         super().__init__()
         in_channels = INPUT_CHANNELS + TIME_CHANNELS
 
-        self.enc1 = EncoderBlockGeneric(in_channels, 16, dropout_rate)
-        self.enc_bottleneck = EncoderBlockBottleneck(16, 32, dropout_rate)
+        self.enc1 = EncoderBlockGeneric(in_channels, 32, dropout_rate)
+        self.enc_bottleneck = EncoderBlockBottleneck(32, 64, dropout_rate)
 
-        self.dec_bottleneck = DecoderBlockBottleneck(32, 16, dropout_rate)
+        self.dec_bottleneck = DecoderBlockBottleneck(64, 32, dropout_rate)
         self.dec_final = DecoderBlockFinal(
-            in_channels=16,
+            in_channels=32,
             dropout_rate=dropout_rate,
             apply_sigmoid=False,
             final_channels=3,
@@ -77,14 +77,14 @@ class UnetVelocityFieldImageNet32(_ImageNetUnetBase):
         super().__init__()
         in_channels = INPUT_CHANNELS + TIME_CHANNELS
 
-        self.enc1 = EncoderBlockGeneric(in_channels, 16, dropout_rate)
-        self.enc2 = EncoderBlockGeneric(16, 32, dropout_rate)
-        self.enc_bottleneck = EncoderBlockBottleneck(32, 64, dropout_rate)
+        self.enc1 = EncoderBlockGeneric(in_channels, 32, dropout_rate)
+        self.enc2 = EncoderBlockGeneric(32, 64, dropout_rate)
+        self.enc_bottleneck = EncoderBlockBottleneck(64, 128, dropout_rate)
 
-        self.dec_bottleneck = DecoderBlockBottleneck(64, 32, dropout_rate)
-        self.dec2 = DecoderBlockGeneric(32, 16, dropout_rate)
+        self.dec_bottleneck = DecoderBlockBottleneck(128, 64, dropout_rate)
+        self.dec2 = DecoderBlockGeneric(64, 32, dropout_rate)
         self.dec_final = DecoderBlockFinal(
-            in_channels=16,
+            in_channels=32,
             dropout_rate=dropout_rate,
             apply_sigmoid=False,
             final_channels=FINAL_CHANNELS,
@@ -108,16 +108,16 @@ class UnetVelocityFieldImageNet64(_ImageNetUnetBase):
         super().__init__()
         in_channels = INPUT_CHANNELS + TIME_CHANNELS
 
-        self.enc1 = EncoderBlockGeneric(in_channels, 16, dropout_rate)
-        self.enc2 = EncoderBlockGeneric(16, 32, dropout_rate)
-        self.enc3 = EncoderBlockGeneric(32, 64, dropout_rate)
-        self.enc_bottleneck = EncoderBlockBottleneck(64, 128, dropout_rate)
+        self.enc1 = EncoderBlockGeneric(in_channels, 32, dropout_rate)
+        self.enc2 = EncoderBlockGeneric(32, 64, dropout_rate)
+        self.enc3 = EncoderBlockGeneric(64, 128, dropout_rate)
+        self.enc_bottleneck = EncoderBlockBottleneck(128, 256, dropout_rate)
 
-        self.dec_bottleneck = DecoderBlockBottleneck(128, 64, dropout_rate)
-        self.dec3 = DecoderBlockGeneric(64, 32, dropout_rate)
-        self.dec2 = DecoderBlockGeneric(32, 16, dropout_rate)
+        self.dec_bottleneck = DecoderBlockBottleneck(256, 128, dropout_rate)
+        self.dec3 = DecoderBlockGeneric(128, 64, dropout_rate)
+        self.dec2 = DecoderBlockGeneric(64, 32, dropout_rate)
         self.dec_final = DecoderBlockFinal(
-            in_channels=16,
+            in_channels=32,
             dropout_rate=dropout_rate,
             apply_sigmoid=False,
             final_channels=FINAL_CHANNELS,

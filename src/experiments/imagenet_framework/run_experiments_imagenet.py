@@ -36,7 +36,7 @@ SINKHORN_EPSILONS = [0.01, 0.1]
 
 PARAMS_EXP = {
     "num_epochs": 10,
-    "learning_rate": 1.8e-3,
+    "learning_rate": 2.5e-3,
     "dropout_rate_model": 0.0,
     "size_train_set": 40000,
     "amount_samples": 1000,

@@ -16,7 +16,7 @@ TABLES_DIR = FRAMEWORK_DIR / "tables"
 REPORTS_DIR = FRAMEWORK_DIR / "reports"
 
 def load_imagenet_scenario_data(dim: int, size_train_set: int, device: torch.device) -> torch.Tensor:
-    x = load_imagenet_training_tensor(img_size=dim, device=device)
+    x = load_imagenet_training_tensor(img_size=dim, device=device, num_parts=1)
     if size_train_set < x.shape[0]:
         x = x[:size_train_set]
     return x
