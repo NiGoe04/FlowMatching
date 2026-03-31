@@ -6,8 +6,15 @@ import torch
 from torch import Tensor
 from torchvision import datasets, transforms
 import pickle
+import numpy as np
 
 from src.flow_matching.model.velocity_model_basic import SimpleVelocityModel
+from src.flow_matching.model.velocity_model_imagenet import (
+    UnetVelocityModelImageNet8,
+    UnetVelocityModelImageNet16,
+    UnetVelocityModelImageNet32,
+    UnetVelocityModelImageNet64,
+)
 from src.flow_matching.model.velocity_model_unet import UnetVelocityModel
 
 
@@ -67,6 +74,27 @@ def load_model_unet(model_path, dropout_rate, device: torch.device):
     model.to(device)
     model.eval()
 
+    return model
+
+
+def get_imagenet_unet_model(img_size: int, dropout_rate: float, device: torch.device):
+    if img_size == 8:
+        return UnetVelocityModelImageNet8(dropout_rate=dropout_rate, device=device)
+    if img_size == 16:
+        return UnetVelocityModelImageNet16(dropout_rate=dropout_rate, device=device)
+    if img_size == 32:
+        return UnetVelocityModelImageNet32(dropout_rate=dropout_rate, device=device)
+    if img_size == 64:
+        return UnetVelocityModelImageNet64(dropout_rate=dropout_rate, device=device)
+    raise ValueError(f"Unsupported ImageNet resolution: {img_size}. Supported: 8, 16, 32, 64.")
+
+
+def load_model_unet_imagenet(model_path: str, img_size: int, dropout_rate: float, device: torch.device):
+    model = get_imagenet_unet_model(img_size=img_size, dropout_rate=dropout_rate, device=device)
+    state_dict = torch.load(model_path, map_location=device)
+    model.load_state_dict(state_dict)
+    model.to(device)
+    model.eval()
     return model
 
 
@@ -206,3 +234,78 @@ def unpickle(file):
         d = pickle.load(fo)
     return d
 
+
+def load_imagenet_databatch(data_folder: str, idx: int, img_size: int) -> Tensor:
+    """
+    Load one ImageNet-style training batch stored as a pickled dict and return
+    image data in NCHW format.
+
+    Expected file naming:
+        train_data_batch_1 ... train_data_batch_10
+
+    The pickled dict is expected to contain:
+        - 'data': [N, 3*H*W]
+        - 'mean': [3*H*W]
+        - 'labels': ignored for flow matching
+    """
+    data_file = os.path.join(data_folder, f"train_data_batch_{idx}")
+    if not os.path.exists(data_file):
+        raise FileNotFoundError(f"Could not find ImageNet batch file: {data_file}")
+
+    d = unpickle(data_file)
+    x = d["data"].astype(np.float32)
+    mean_image = d["mean"].astype(np.float32)
+
+    x = x / np.float32(255.0)
+    mean_image = mean_image / np.float32(255.0)
+    x -= mean_image
+
+    img_size2 = img_size * img_size
+    x = np.dstack((x[:, :img_size2], x[:, img_size2:2 * img_size2], x[:, 2 * img_size2:]))
+    x = x.reshape((x.shape[0], img_size, img_size, 3)).transpose(0, 3, 1, 2)
+    return torch.from_numpy(x)
+
+
+def resolve_imagenet_data_folder(img_size: int) -> str:
+    """
+    Resolve a dataset folder inside <repo>/datasets that contains ImageNet data
+    for the requested resolution.
+    """
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../"))
+    datasets_root = os.path.join(repo_root, "datasets")
+    if not os.path.isdir(datasets_root):
+        raise FileNotFoundError(f"Datasets directory not found: {datasets_root}")
+
+    candidates = []
+    for name in os.listdir(datasets_root):
+        lower_name = name.lower()
+        if "imagenet" in lower_name and str(img_size) in lower_name:
+            full = os.path.join(datasets_root, name)
+            if os.path.isdir(full):
+                candidates.append(full)
+
+    if not candidates:
+        raise FileNotFoundError(
+            f"No ImageNet dataset folder found for resolution {img_size} under: {datasets_root}"
+        )
+
+    # deterministic selection
+    candidates.sort()
+    return candidates[0]
+
+
+def load_imagenet_training_tensor(
+    img_size: int,
+    num_parts: int = 10,
+    device: torch.device | str = "cpu",
+    flatten: bool = False,
+) -> Tensor:
+    """
+    Load and concatenate ImageNet training parts from the discovered dataset folder.
+    """
+    data_folder = resolve_imagenet_data_folder(img_size)
+    chunks = [load_imagenet_databatch(data_folder, idx=i, img_size=img_size) for i in range(1, num_parts + 1)]
+    x = torch.cat(chunks, dim=0).to(device)
+    if flatten:
+        return x.view(x.shape[0], -1)
+    return x

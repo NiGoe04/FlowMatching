@@ -2,6 +2,8 @@ from typing import Tuple
 
 import torch
 from flow_matching.solver import ODESolver
+from torchmetrics.image.fid import FrechetInceptionDistance
+from torchmetrics.image.inception import InceptionScore
 
 from src.flow_matching.model.coupling import Coupler
 from src.flow_matching.model.losses import TensorCost
@@ -10,6 +12,47 @@ straightness_simulation_steps = 256
 
 
 class Metrics:
+    @staticmethod
+    def _prepare_images_for_torchmetrics(images: torch.Tensor) -> torch.Tensor:
+        if images.ndim != 4:
+            raise ValueError(f"Expected images tensor [N, C, H, W], got {tuple(images.shape)}")
+        if images.shape[1] == 1:
+            images = images.repeat(1, 3, 1, 1)
+        if images.shape[1] != 3:
+            raise ValueError(f"Expected 1 or 3 channels, got {images.shape[1]}")
+        images = images.float()
+        images = images - images.amin(dim=(1, 2, 3), keepdim=True)
+        images = images / (images.amax(dim=(1, 2, 3), keepdim=True) + 1e-8)
+        return (images * 255.0).to(torch.uint8)
+
+    @staticmethod
+    def calculate_fid(real_images: torch.Tensor, generated_images: torch.Tensor, batch_size: int = 64) -> torch.Tensor:
+        device = real_images.device
+        fid = FrechetInceptionDistance(feature=2048).to(device)
+        fid.set_dtype(torch.float32)
+        real_images_u8 = Metrics._prepare_images_for_torchmetrics(real_images).to(device)
+        generated_images_u8 = Metrics._prepare_images_for_torchmetrics(generated_images).to(device)
+
+        for start in range(0, real_images_u8.shape[0], batch_size):
+            fid.update(real_images_u8[start:start + batch_size], real=True)
+        for start in range(0, generated_images_u8.shape[0], batch_size):
+            fid.update(generated_images_u8[start:start + batch_size], real=False)
+        return fid.compute()
+
+    @staticmethod
+    def calculate_inception_score(
+        generated_images: torch.Tensor,
+        batch_size: int = 64,
+        splits: int = 10,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        device = generated_images.device
+        is_metric = InceptionScore(splits=splits).to(device)
+        is_metric.set_dtype(torch.float32)
+        images_u8 = Metrics._prepare_images_for_torchmetrics(generated_images).to(device)
+        for start in range(0, images_u8.shape[0], batch_size):
+            is_metric.update(images_u8[start:start + batch_size])
+        return is_metric.compute()
+
     @staticmethod
     def _calculate_mean_velocity_norm_sq(model, x0: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
