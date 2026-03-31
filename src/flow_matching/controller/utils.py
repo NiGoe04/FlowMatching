@@ -266,11 +266,22 @@ def load_imagenet_databatch(data_folder: str, idx: int, img_size: int) -> Tensor
     return torch.from_numpy(x)
 
 
-def resolve_imagenet_data_folder(img_size: int) -> str:
+def resolve_imagenet_data_folder(img_size: int, split: str = "train") -> str:
     """
-    Resolve a dataset folder inside <repo>/datasets that contains ImageNet data
-    for the requested resolution.
+    Resolve the ImageNet split folder inside <repo>/datasets for the requested resolution.
+
+    Expected layout:
+        datasets/
+            imagenet{img_size}/
+                train/
+                    train_data_batch_1 ... train_data_batch_10
+                val/
+                    val_data
     """
+    normalized_split = split.lower().strip()
+    if normalized_split not in {"train", "val"}:
+        raise ValueError(f"Invalid split '{split}'. Expected one of: 'train', 'val'.")
+
     repo_root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../"))
     datasets_root = os.path.join(repo_root, "datasets")
     if not os.path.isdir(datasets_root):
@@ -289,9 +300,14 @@ def resolve_imagenet_data_folder(img_size: int) -> str:
             f"No ImageNet dataset folder found for resolution {img_size} under: {datasets_root}"
         )
 
-    # deterministic selection
     candidates.sort()
-    return candidates[0]
+    dataset_root = candidates[0]
+    split_folder = os.path.join(dataset_root, normalized_split)
+    if not os.path.isdir(split_folder):
+        raise FileNotFoundError(
+            f"Could not find split folder '{normalized_split}' in dataset root: {dataset_root}"
+        )
+    return split_folder
 
 
 def load_imagenet_training_tensor(
@@ -303,9 +319,40 @@ def load_imagenet_training_tensor(
     """
     Load and concatenate ImageNet training parts from the discovered dataset folder.
     """
-    data_folder = resolve_imagenet_data_folder(img_size)
+    data_folder = resolve_imagenet_data_folder(img_size, split="train")
     chunks = [load_imagenet_databatch(data_folder, idx=i, img_size=img_size) for i in range(1, num_parts + 1)]
     x = torch.cat(chunks, dim=0).to(device)
     if flatten:
         return x.view(x.shape[0], -1)
     return x
+
+
+def load_imagenet_validation_tensor(
+    img_size: int,
+    device: torch.device | str = "cpu",
+    flatten: bool = False,
+) -> Tensor:
+    """
+    Load ImageNet validation data from the discovered dataset folder.
+    """
+    data_folder = resolve_imagenet_data_folder(img_size, split="val")
+    data_file = os.path.join(data_folder, "val_data")
+    if not os.path.exists(data_file):
+        raise FileNotFoundError(f"Could not find ImageNet validation file: {data_file}")
+
+    d = unpickle(data_file)
+    x = d["data"].astype(np.float32)
+    mean_image = d["mean"].astype(np.float32)
+
+    x = x / np.float32(255.0)
+    mean_image = mean_image / np.float32(255.0)
+    x -= mean_image
+
+    img_size2 = img_size * img_size
+    x = np.dstack((x[:, :img_size2], x[:, img_size2:2 * img_size2], x[:, 2 * img_size2:]))
+    x = x.reshape((x.shape[0], img_size, img_size, 3)).transpose(0, 3, 1, 2)
+
+    x_t = torch.from_numpy(x).to(device)
+    if flatten:
+        return x_t.view(x_t.shape[0], -1)
+    return x_t

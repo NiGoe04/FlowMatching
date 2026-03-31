@@ -5,7 +5,7 @@ from pathlib import Path
 import torch
 from flow_matching.solver import ODESolver
 
-from src.flow_matching.controller.utils import load_imagenet_training_tensor
+from src.flow_matching.controller.utils import load_imagenet_training_tensor, load_imagenet_validation_tensor
 
 FRAMEWORK_DIR = Path(__file__).resolve().parent
 REGISTRY_FILE = FRAMEWORK_DIR / "current_model_paths.py"
@@ -20,6 +20,10 @@ def load_imagenet_scenario_data(dim: int, size_train_set: int, device: torch.dev
     if size_train_set < x.shape[0]:
         x = x[:size_train_set]
     return x
+
+
+def load_imagenet_scenario_validation_data(dim: int, device: torch.device) -> torch.Tensor:
+    return load_imagenet_validation_tensor(img_size=dim, device=device)
 
 
 def sample_model_images(model, dim: int, amount_samples: int, solver_steps: int, t_end: float, device: torch.device) -> torch.Tensor:
