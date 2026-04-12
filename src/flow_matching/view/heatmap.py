@@ -38,7 +38,7 @@ def visualize_heatmap_minibatch_ot_2d(source_dist: Distribution2D,
     #plt.title(title)
 
     if show_colorbar:
-        plt.colorbar(label="Probability mass concentration (relative)")
+        plt.colorbar(label="Probability mass concentration (unnormalized counts)")
 
     plt.tight_layout()
     plt.show()

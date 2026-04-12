@@ -14,7 +14,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 SCENARIO = "tri_gauss_twice_ftd"
 NUM_DATA_POINTS = [2000] #[100, 500, 1000, 2000]
-DIMS = [2, 3, 8, 16, 32, 1024] #[3, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+DIMS = [3, 16, 256, 512, 1024, 2048] #[3, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
 ITERATIONS = 1
 SAVE_RESULTS = False
 LOG2_DIM_AXIS = True

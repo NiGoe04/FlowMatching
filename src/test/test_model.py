@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import argparse
 from pathlib import Path
 from typing import Optional
 
@@ -13,12 +12,30 @@ from src.experiments.mixed_gaussian_framework.scenarios import SCENARIO_NAMES, g
 from src.flow_matching.controller.utils import load_model_n_dim
 
 
+# =========================
+# 🔧 CONFIGURATION (EDIT HERE)
+# =========================
+DIM = 8
+OT_BATCH_SIZE = 1
+SCENARIO = "tri_gauss_twice"  # or set explicitly as string
+OT_OPTIMIZER = "hungarian"  # "hungarian" or "sinkhorn"
+EPSILON: Optional[float] = None  # required if sinkhorn
+VANILLA_FM_MODE = False
+
+AMOUNT_SAMPLES = 16
+SOLVER_METHOD = "midpoint"
+SOLVER_STEPS = 100
+T_END = 1.0
+SEED = 42
+# =========================
+
+
 def _solver_display_name(ot_optimizer: str, epsilon: Optional[float]) -> str:
     if ot_optimizer == "hungarian":
         return "hungarian"
     if ot_optimizer == "sinkhorn":
         if epsilon is None:
-            raise ValueError("Sinkhorn optimizer requires --epsilon.")
+            raise ValueError("Sinkhorn optimizer requires epsilon.")
         return f"sinkhorn_{epsilon}"
     raise ValueError(f"Unsupported ot optimizer: {ot_optimizer}")
 
@@ -41,7 +58,6 @@ def _resolve_model_path(
         if candidate_path.exists():
             return candidate_path
 
-        # Registry can contain machine-specific absolute paths. Try a local fallback with basename.
         basename_fallback = framework_models_dir / candidate_path.name
         if basename_fallback.exists():
             return basename_fallback
@@ -54,48 +70,15 @@ def _resolve_model_path(
         return matches[0]
 
     raise FileNotFoundError(
-        "No matching model found. "
-        f"Searched registry key '{key}' and pattern '{pattern}' in '{framework_models_dir}'."
+        f"No matching model found for key '{key}' and pattern '{pattern}' in '{framework_models_dir}'."
     )
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description=(
-            "Load a trained mixed-gaussian model, sample x0 from the chosen scenario, "
-            "push samples through the ODE solver, and print generated target samples."
-        )
-    )
-    parser.add_argument("--dim", type=int, required=True, help="Dimension d used during training.")
-    parser.add_argument("--ot-batch-size", type=int, required=True, help="OT batch size k used during training.")
-    parser.add_argument("--scenario", required=True, choices=SCENARIO_NAMES, help="Scenario name.")
-    parser.add_argument(
-        "--ot-optimizer",
-        default="hungarian",
-        choices=["hungarian", "sinkhorn"],
-        help="OT optimizer used in training.",
-    )
-    parser.add_argument("--epsilon", type=float, default=None, help="Sinkhorn epsilon (required when --ot-optimizer sinkhorn).")
-    parser.add_argument(
-        "--vanilla-fm-mode",
-        action="store_true",
-        help="Use registry key for vanilla FM mode (V). Default is non-vanilla/mixed (N).",
-    )
-    parser.add_argument("--amount-samples", type=int, default=16, help="How many samples to generate.")
-    parser.add_argument("--solver-method", default="euler", help="ODE solver method.")
-    parser.add_argument("--solver-steps", type=int, default=100, help="Number of solver steps.")
-    parser.add_argument("--t-end", type=float, default=1.0, help="End time for sampling trajectory.")
-    parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducible sampling.")
-    return parser.parse_args()
 
 
 def main() -> None:
-    args = parse_args()
+    if OT_OPTIMIZER == "sinkhorn" and EPSILON is None:
+        raise ValueError("EPSILON must be set when using sinkhorn.")
 
-    if args.ot_optimizer == "sinkhorn" and args.epsilon is None:
-        raise ValueError("--epsilon must be provided when --ot-optimizer sinkhorn.")
-
-    torch.manual_seed(args.seed)
+    torch.manual_seed(SEED)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     framework_dir = Path(__file__).resolve().parents[1] / "experiments" / "mixed_gaussian_framework"
@@ -103,35 +86,39 @@ def main() -> None:
 
     model_path = _resolve_model_path(
         framework_models_dir=models_dir,
-        dim=args.dim,
-        ot_batch_size=args.ot_batch_size,
-        ot_optimizer=args.ot_optimizer,
-        epsilon=args.epsilon,
-        scenario_name=args.scenario,
-        vanilla_fm_mode=args.vanilla_fm_mode,
+        dim=DIM,
+        ot_batch_size=OT_BATCH_SIZE,
+        ot_optimizer=OT_OPTIMIZER,
+        epsilon=EPSILON,
+        scenario_name=SCENARIO,
+        vanilla_fm_mode=VANILLA_FM_MODE,
     )
 
-    gmd_x0, gmd_x1, _ = get_scenario(scenario_name=args.scenario, dim=args.dim, device=device)
-    x0_samples = gmd_x0.sample(args.amount_samples)
+    gmd_x0, gmd_x1, _ = get_scenario(scenario_name=SCENARIO, dim=DIM, device=device)
+    x0_samples = gmd_x0.sample(AMOUNT_SAMPLES)
 
-    model = load_model_n_dim(args.dim, str(model_path), device=device)
+    model = load_model_n_dim(DIM, str(model_path), device=device)
     solver = ODESolver(velocity_model=model)
+
     generated_target_samples = solver.sample(
         x_init=x0_samples,
-        method=args.solver_method,
-        step_size=1.0 / float(args.solver_steps),
-        time_grid=torch.tensor([0.0, float(args.t_end)], device=device),
+        method=SOLVER_METHOD,
+        step_size=1.0 / float(SOLVER_STEPS),
+        time_grid=torch.tensor([0.0, float(T_END)], device=device),
     )
 
-    true_target_samples = gmd_x1.sample(args.amount_samples)
+    true_target_samples = gmd_x1.sample(AMOUNT_SAMPLES)
 
     print(f"Using device: {device}")
     print(f"Using model: {model_path}")
-    print(f"Scenario: {args.scenario} | dim={args.dim} | ot_batch_size={args.ot_batch_size}")
+    print(f"Scenario: {SCENARIO} | dim={DIM} | ot_batch_size={OT_BATCH_SIZE}")
+
     print("\nSource samples x0:")
     print(x0_samples)
+
     print("\nGenerated target samples (model output):")
     print(generated_target_samples)
+
     print("\nReference target samples (fresh draw from target distribution x1):")
     print(true_target_samples)
 

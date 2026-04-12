@@ -7,14 +7,14 @@ from src.flow_matching.view.heatmap import visualize_heatmap_minibatch_ot_2d
 
 # Scenario parameters
 N_SAMPLES = 1000
-VARIANCE_SOURCE = 0.1
-VARIANCE_TARGET = 0.1
-BOUNDS = [-2, 2, -4, 4]
+VARIANCE_SOURCE = 60 #60
+VARIANCE_TARGET = 60 #60
+BOUNDS = [-4, 4, -16, 16]
 
 # Heatmap parameters (requested)
-RESOLUTION = 35
+RESOLUTION = 10
 OT_BATCH_SIZE = 1
-OT_ITERATIONS = 5
+OT_ITERATIONS = 10
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

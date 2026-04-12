@@ -27,18 +27,18 @@ TRAIN_MODEL = False
 SAVE_MODEL = False
 GENERATE_SAMPLES = True
 EVAL_METRICS = True
-VISUALIZE_TIME = True
+VISUALIZE_TIME = False
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MODEL_SAVE_PATH = "../../../../models"
 
 # hyperparams
 PARAMS = {
-    "num_epochs": 12,
-    "batch_size": 64,
+    "num_epochs": 1,
+    "batch_size": 128,
     "dropout_rate_model": 0.0,
-    "learning_rate": 2e-3,
-    "size_train_set": 80000,
+    "learning_rate": 1.5e-3,
+    "size_train_set": 128116, # full batch is 128116
     "num_trainer_val_samples": 1000,
     "amount_samples": 8,
     "solver_steps": 256,
@@ -66,7 +66,7 @@ path = AffineProbPath(CondOTScheduler())
 optimizer = torch.optim.Adam(model.parameters(), PARAMS["learning_rate"])
 trainer = CondTrainer(model, optimizer, path, PARAMS["num_epochs"], PARAMS["num_trainer_val_samples"], device=DEVICE)
 
-model_path = os.path.join(MODEL_SAVE_PATH, "model_IMAGENET_16_2026-03-31_15-32-45.pth")
+model_path = os.path.join(MODEL_SAVE_PATH, "model_IMAGENET_16_2026-03-31_18-14-45.pth")
 
 
 if FIND_LR:
@@ -100,9 +100,22 @@ if GENERATE_SAMPLES:
     if EVAL_METRICS:
         validation_images = load_imagenet_scenario_validation_data(DIM, DEVICE)
         real_eval = validation_images[:PARAMS["amount_samples"]].to(DEVICE)
+        n = PARAMS["amount_samples"]
+        real_eval_next = validation_images[n:2 * n].to(DEVICE)
         fid = Metrics.calculate_fid(real_eval, x_1_sample)
         inception_score, _ = Metrics.calculate_inception_score(x_1_sample)
+        fid_off = Metrics.calculate_fid(real_eval, x_0_sample)
+        inception_score_off, _ = Metrics.calculate_inception_score(x_0_sample)
+        fid_on = Metrics.calculate_fid(real_eval, real_eval_next)
+        inception_score_on, _ = Metrics.calculate_inception_score(real_eval_next)
         print(f"FID: {fid.item()}, Inception Score: {inception_score.item()}")
+        print(f"FID Off: {fid_off.item()}, Inception Score Off: {inception_score_off.item()}")
+        print(f"FID On: {fid_on.item()}, Inception Score On: {inception_score_on.item()}")
+        print()
+        print("real_eval min/max:", real_eval.min().item(), real_eval.max().item())
+        print("real_eval_next min/max:", real_eval_next.min().item(), real_eval_next.max().item())
+        print("x_0_sample min/max:", x_0_sample.min().item(), x_0_sample.max().item())
+        print("x_1_sample min/max:", x_1_sample.min().item(), x_1_sample.max().item())
 
 if VISUALIZE_TIME:
     model = load_model_unet_imagenet(
